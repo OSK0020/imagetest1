@@ -1,12 +1,12 @@
-name: Test Models Manually
+name: Manual Model Test
 
 on:
-  workflow_dispatch: # זה מה שיוצר את הכפתור להפעלה ידנית
+  workflow_dispatch: # זה הכפתור הידני
 
 jobs:
-  generate-images:
+  test-models:
     runs-on: ubuntu-latest
-
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -16,15 +16,15 @@ jobs:
         with:
           python-version: '3.9'
 
-      - name: Install requests
+      - name: Install dependencies
         run: pip install requests
 
-      - name: Run Model Test Script
+      - name: Run Python Script
+        # שים לב: זה חייב להיות אותו שם כמו הקובץ שיצרת למעלה!
         run: python test_models.py
 
-      # השלב הזה אוסף את כל התמונות ושומר אותן להורדה
-      - name: Upload Images as Artifact
+      - name: Upload Images (Artifacts)
         uses: actions/upload-artifact@v4
         with:
-          name: generated-images
+          name: model-results
           path: "*.jpg"
