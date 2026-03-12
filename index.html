@@ -1,17 +1,31 @@
 <!DOCTYPE html>
-<html lang="he" dir="rtl" id="html-root">
+<!-- הוספנו תמיכה במצב לילה ברמת ה-HTML -->
+<html lang="he" dir="rtl" id="html-root" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Models Gallery</title>
-    <!-- Tailwind CSS -->
+    
+    <!-- Tailwind CSS with Dark Mode config -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    
     <style>
         /* Loading Animation */
         .loader {
-            border: 4px solid rgba(255, 255, 255, 0.1);
+            border: 4px solid rgba(156, 163, 175, 0.2); /* צבע שקוף שמתאים לשני המצבים */
             border-left-color: #3b82f6;
             border-radius: 50%;
             width: 40px;
@@ -26,49 +40,110 @@
         /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #9ca3af; border-radius: 10px; }
+        .dark ::-webkit-scrollbar-thumb { background: #4b5563; }
         ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
 
-        /* Sidebar transitions */
-        .sidebar-transition {
-            transition: transform 0.3s ease-in-out;
-        }
-        
-        /* Language specific logic */
-        :lang(he) .ltr-only { display: none !important; }
-        :lang(en) .rtl-only { display: none !important; }
+        /* Smooth Transitions */
+        body { transition: background-color 0.3s, color 0.3s; }
+        .sidebar-transition { transition: transform 0.3s ease-in-out; }
     </style>
 </head>
-<body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col font-sans overflow-x-hidden">
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col overflow-x-hidden transition-colors duration-300">
+
+    <!-- SPLASH / WELCOME SCREEN (מודל חובה להכנסת סוד) -->
+    <div id="splash-screen" class="fixed inset-0 z-[100] bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4 transition-opacity duration-500">
+        <div class="bg-white dark:bg-gray-800 max-w-md w-full p-8 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 text-center relative overflow-hidden">
+            <!-- Logo in splash -->
+            <div class="w-20 h-20 mx-auto bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
+                <i data-lucide="aperture" class="w-10 h-10 text-white"></i>
+            </div>
+            
+            <h1 class="text-3xl font-bold mb-2 text-gray-900 dark:text-white" data-i18n="welcomeTitle">ברוכים הבאים</h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-8" data-i18n="welcomeSub">התחברו כדי לשמור את היצירות שלכם בענן.</p>
+
+            <!-- Optional Google Login -->
+            <button id="splash-login-btn" class="w-full bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-600 text-base py-3 rounded-xl transition-colors flex items-center justify-center gap-3 font-medium mb-6 shadow-sm">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                <span data-i18n="loginWithGoogle">התחבר עם Google (אופציונלי)</span>
+            </button>
+
+            <div class="relative flex items-center py-2 mb-6">
+                <div class="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
+                <span class="flex-shrink-0 mx-4 text-gray-400 text-sm">חובה להתחלה</span>
+                <div class="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
+            </div>
+
+            <!-- Mandatory API Key -->
+            <div class="text-start mb-6">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" data-i18n="apiKeyLabel">הזן מפתח סודי (API Key)</label>
+                <input type="password" id="splash-api-key" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" placeholder="API Key...">
+                
+                <button id="toggle-help-btn" class="text-xs text-blue-500 hover:text-blue-600 dark:text-blue-400 mt-2 flex items-center gap-1">
+                    <i data-lucide="help-circle" class="w-3 h-3"></i>
+                    <span data-i18n="howToGetSecret">איך משיגים סוד?</span>
+                </button>
+                <div id="help-box" class="hidden mt-2 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-xs text-blue-800 dark:text-blue-200 border border-blue-100 dark:border-blue-800/50">
+                    <ol class="list-decimal list-inside space-y-1" data-i18n="helpText">
+                        <li>כנסו לאתר pollinations.ai</li>
+                        <li>התחברו עם חשבון</li>
+                        <li>עברו להגדרות והעתיקו את המפתח הסודי</li>
+                    </ol>
+                </div>
+            </div>
+
+            <button id="splash-start-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                <span data-i18n="startApp">התחל ליצור</span>
+                <i data-lucide="arrow-left" class="w-5 h-5 inline-block mr-2 rtl-flip"></i>
+            </button>
+        </div>
+    </div>
 
     <!-- Top Navbar -->
-    <header class="flex justify-between items-center p-4 border-b border-gray-800 bg-gray-900/80 backdrop-blur-md sticky top-0 z-30">
+    <header class="flex justify-between items-center p-4 border-b bg-white/80 dark:bg-gray-900/80 border-gray-200 dark:border-gray-800 backdrop-blur-md sticky top-0 z-30 transition-colors">
+        
+        <!-- צד התפריט והלוגו (מיושרים לאותו צד עכשיו) -->
         <div class="flex items-center gap-3">
+            <button id="menu-btn" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300">
+                <i data-lucide="menu" class="w-5 h-5"></i>
+            </button>
             <div class="bg-gradient-to-br from-blue-500 to-purple-600 p-2 rounded-xl">
                 <i data-lucide="aperture" class="w-6 h-6 text-white"></i>
             </div>
-            <span class="font-bold text-xl tracking-wide hidden sm:block" data-i18n="logoTitle">מעבדת AI</span>
+            <span class="font-bold text-xl tracking-wide hidden sm:block text-gray-900 dark:text-white" data-i18n="logoTitle">מעבדת AI</span>
         </div>
         
-        <div class="flex items-center gap-3">
-            <button id="lang-btn" class="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-sm font-medium transition-colors border border-gray-700">
-                EN
+        <!-- כפתורי שפה ועיצוב (בצד השני) -->
+        <div class="flex items-center gap-2">
+            <!-- כפתור מצב לילה/יום -->
+            <button id="theme-btn" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300" title="שנה מצב תצוגה">
+                <i data-lucide="sun" id="theme-icon-light" class="w-5 h-5 hidden"></i>
+                <i data-lucide="moon" id="theme-icon-dark" class="w-5 h-5"></i>
             </button>
-            <button id="menu-btn" class="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors border border-gray-700">
-                <i data-lucide="menu" class="w-5 h-5"></i>
+
+            <!-- כפתור שפה עם כדור הארץ -->
+            <button id="lang-btn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-sm font-medium transition-colors border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300">
+                <i data-lucide="globe" class="w-4 h-4 text-blue-500"></i>
+                <span id="lang-text">EN</span>
             </button>
         </div>
     </header>
 
     <!-- Sidebar Overlay -->
-    <div id="sidebar-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-40 transition-opacity"></div>
+    <div id="sidebar-overlay" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden z-40 transition-opacity"></div>
 
-    <!-- Sidebar / Drawer -->
-    <aside id="sidebar" class="fixed top-0 bottom-0 w-80 bg-gray-900 border-gray-800 z-50 sidebar-transition flex flex-col shadow-2xl" style="transform: translateX(100%);">
+    <!-- Sidebar / Drawer (נפתח מהצד שבו נמצא הכפתור) -->
+    <aside id="sidebar" class="fixed top-0 bottom-0 w-80 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 z-50 sidebar-transition flex flex-col shadow-2xl transition-colors" style="transform: translateX(100%);">
+        
         <!-- Sidebar Header -->
-        <div class="p-4 border-b border-gray-800 flex justify-between items-center">
-            <h2 class="font-bold text-lg" data-i18n="profileTitle">הפרופיל שלי</h2>
-            <button id="close-sidebar" class="p-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition-colors">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
+            <h2 class="font-bold text-lg text-gray-900 dark:text-white" data-i18n="profileTitle">הפרופיל שלי</h2>
+            <button id="close-sidebar" class="p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
         </div>
@@ -76,117 +151,104 @@
         <div class="flex-grow overflow-y-auto p-4 space-y-6">
             
             <!-- Profile Section -->
-            <div class="bg-gray-800/50 p-4 rounded-xl border border-gray-700/50">
+            <div class="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700/50">
                 <div class="flex items-center gap-4 mb-4">
                     <img id="user-avatar" src="" alt="Profile" class="w-12 h-12 rounded-full hidden border-2 border-blue-500 shadow-lg object-cover">
-                    <div id="user-avatar-placeholder" class="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-lg font-bold">
+                    <div id="user-avatar-placeholder" class="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-lg font-bold text-white">
                         U
                     </div>
                     <div>
-                        <div class="font-medium" id="user-name" data-i18n="guest">אורח</div>
-                        <div class="text-xs text-gray-400" id="tier-display">Tier: Free</div>
+                        <div class="font-medium text-gray-900 dark:text-white" id="user-name" data-i18n="guest">אורח</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400" id="tier-display">Tier: Free</div>
                     </div>
                 </div>
                 
-                <!-- Auth Buttons -->
-                <div class="flex gap-2">
-                    <button id="login-btn" class="w-full bg-white hover:bg-gray-100 text-gray-900 text-sm py-2 rounded-lg transition-colors flex items-center justify-center gap-2 font-medium">
-                        <svg class="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-                        </svg>
-                        <span data-i18n="loginWithGoogle">התחבר עם Google</span>
-                    </button>
-                    <button id="logout-btn" class="hidden w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm py-2 rounded-lg transition-colors flex items-center justify-center gap-2 font-medium">
-                        <i data-lucide="log-out" class="w-4 h-4"></i>
-                        <span data-i18n="logout">התנתק</span>
-                    </button>
-                </div>
+                <button id="logout-btn" class="hidden w-full bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 text-sm py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 font-medium border border-red-100 dark:border-transparent">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                    <span data-i18n="logout">התנתק</span>
+                </button>
             </div>
 
-            <!-- Balance & Settings Section -->
+            <!-- Settings Section -->
             <div class="space-y-3">
-                <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider" data-i18n="settingsTitle">הגדרות ויתרה</h3>
+                <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider" data-i18n="settingsTitle">הגדרות ויתרה</h3>
                 
-                <div class="bg-gray-800/50 p-4 rounded-xl border border-gray-700/50 flex justify-between items-center">
-                    <div class="flex items-center gap-2 text-sm">
-                        <i data-lucide="cloud" class="w-4 h-4 text-blue-400"></i>
+                <div class="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700/50 flex justify-between items-center">
+                    <div class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                        <i data-lucide="image" class="w-4 h-4 text-purple-500"></i>
                         <span data-i18n="balanceText">תמונות שנוצרו:</span>
                     </div>
-                    <span id="usage-count" class="font-mono font-bold text-blue-400">0</span>
+                    <span id="usage-count" class="font-mono font-bold text-blue-600 dark:text-blue-400">0</span>
                 </div>
 
-                <div class="bg-gray-800/50 p-4 rounded-xl border border-gray-700/50 space-y-2">
-                    <label class="text-sm text-gray-300 flex items-center gap-2">
-                        <i data-lucide="key" class="w-4 h-4"></i>
-                        <span data-i18n="apiKeyLabel">מפתח API (Pollinations)</span>
+                <div class="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700/50 space-y-2">
+                    <label class="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2 font-medium">
+                        <i data-lucide="key" class="w-4 h-4 text-yellow-500"></i>
+                        <span>API Key</span>
                     </label>
-                    <input type="password" id="api-key-input" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500" placeholder="הכנס מפתח לאיכות גבוהה...">
-                    <button id="save-key-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm py-2 rounded-lg transition-colors mt-2" data-i18n="saveKeyBtn">שמור מפתח</button>
-                    <p class="text-[10px] text-gray-500 mt-1" data-i18n="apiKeyDesc">המפתח נשמר מקומית בדפדפן שלך בלבד.</p>
+                    <input type="password" id="api-key-input" class="w-full bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow">
+                    <button id="save-key-btn" class="w-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white text-sm py-2 rounded-lg transition-colors mt-1 font-medium" data-i18n="saveKeyBtn">עדכן מפתח</button>
                 </div>
             </div>
 
             <!-- History Section -->
             <div class="space-y-3">
                 <div class="flex justify-between items-center">
-                    <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                    <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
                         <i data-lucide="history" class="w-4 h-4"></i>
                         <span data-i18n="historyTitle">היסטוריה בענן</span>
                     </h3>
-                    <button id="clear-history-btn" class="text-xs text-red-400 hover:text-red-300 transition-colors" data-i18n="clearHistoryBtn">נקה</button>
+                    <button id="clear-history-btn" class="text-xs text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 transition-colors" data-i18n="clearHistoryBtn">נקה</button>
                 </div>
                 <div id="history-list" class="space-y-2">
-                    <!-- History items injected here -->
+                    <!-- History injected here -->
                 </div>
             </div>
         </div>
     </aside>
 
-    <!-- Main Content -->
-    <main class="flex-grow p-4 md:p-8 overflow-y-auto pb-32" id="main-content">
+    <!-- Main Content - הוספנו pb-56 כדי לאפשר גלילה נוחה עד למטה מבלי ששורת החיפוש תסתיר -->
+    <main class="flex-grow p-4 md:p-8 overflow-y-auto pb-56" id="main-content">
         <div class="max-w-7xl mx-auto text-center mt-6 lg:mt-10 transition-all duration-500" id="welcome-screen">
-            <h1 class="text-4xl md:text-6xl font-extrabold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500" data-i18n="mainTitle">
+            <h1 class="text-4xl md:text-6xl font-extrabold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500" data-i18n="mainTitle">
                 מעבדת המודלים של AI
             </h1>
-            <p class="text-gray-400 text-lg md:text-xl mb-8 max-w-2xl mx-auto" data-i18n="mainSubtitle">
+            <p class="text-gray-600 dark:text-gray-400 text-lg md:text-xl mb-8 max-w-2xl mx-auto leading-relaxed" data-i18n="mainSubtitle">
                 הזן תיאור למטה, וראה בזמן אמת כיצד מודלי הבינה המלאכותית המתקדמים בעולם מפרשים אותו.
             </p>
             
-            <div class="flex justify-center gap-2 flex-wrap text-xs font-medium text-gray-400 max-w-3xl mx-auto" id="model-badges">
-                <!-- Badges injected here via JS -->
+            <div class="flex justify-center gap-2 flex-wrap text-xs font-medium text-gray-600 dark:text-gray-400 max-w-3xl mx-auto" id="model-badges">
+                <!-- Badges -->
             </div>
         </div>
 
-        <!-- Gallery Container -->
+        <!-- Gallery -->
         <div id="gallery" class="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 hidden mt-8">
-            <!-- Images injected here -->
+            <!-- Images -->
         </div>
     </main>
 
-    <!-- Input Area -->
-    <div class="fixed bottom-0 left-0 right-0 bg-gray-900/90 border-t border-gray-800 p-4 backdrop-blur-md z-20">
+    <!-- Input Area (Fixed Bottom) -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-gray-900/90 border-t border-gray-200 dark:border-gray-800 p-4 backdrop-blur-md z-20 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] dark:shadow-[0_-10px_30px_rgba(0,0,0,0.2)]">
         <div class="max-w-4xl mx-auto">
             <form id="prompt-form" class="relative flex items-center">
                 <input 
                     type="text" 
                     id="prompt-input" 
-                    class="w-full bg-gray-800 border border-gray-700 text-white rounded-2xl py-4 px-5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-xl text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-2xl py-4 px-5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-md text-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     required
                 >
                 <button 
                     type="submit" 
                     id="submit-btn"
-                    class="absolute rtl:left-3 ltr:right-3 bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-xl transition-all flex items-center justify-center shadow-lg disabled:bg-gray-600 disabled:cursor-not-allowed"
+                    class="absolute rtl:left-3 ltr:right-3 bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-xl transition-all flex items-center justify-center shadow-lg disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed"
                 >
                     <i data-lucide="sparkles" class="w-5 h-5"></i>
                 </button>
             </form>
-            <div class="text-center mt-3 flex items-center justify-center gap-2 text-xs text-gray-500">
+            <div class="text-center mt-3 flex items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-500">
                 <span data-i18n="poweredBy">מופעל על ידי טכנולוגיית</span>
-                <a href="https://pollinations.ai" target="_blank" class="text-gray-400 hover:text-white transition-colors font-medium">Pollinations.ai</a>
+                <a href="https://pollinations.ai" target="_blank" class="text-gray-700 dark:text-gray-400 hover:text-blue-500 dark:hover:text-white transition-colors font-medium">Pollinations.ai</a>
             </div>
         </div>
     </div>
@@ -197,16 +259,15 @@
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- Firebase Configuration ---
+        // --- Firebase Config ---
         let firebaseConfig;
         const isCanvasEnv = typeof __firebase_config !== 'undefined';
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'pollinations-gallery';
 
         if (isCanvasEnv) {
-            // רץ בתוך מערכת הבדיקות של Canvas
             firebaseConfig = JSON.parse(__firebase_config);
         } else {
-            // >>> נתוני ה-Firebase המעודכנים שלך מוזנים כאן <<<
+            // הפרטים שלך
             firebaseConfig = {
                 apiKey: "AIzaSyBPwGp1eKRg2DxNsexKqwzmq2R-z0x027M",
                 authDomain: "image-tester-6842b.firebaseapp.com",
@@ -226,7 +287,7 @@
         let currentUser = null;
         let unsubscribeSnapshot = null;
 
-        // --- 1. CONFIGURATION & MODELS ---
+        // --- MODELS ---
         const MODELS = [
             { id: 'flux', name: 'Flux Schnell' },
             { id: 'flux-2-dev', name: 'FLUX.2 Dev' },
@@ -239,7 +300,7 @@
             { id: 'klein-large', name: 'FLUX.2 Klein 9B' }
         ];
 
-        // --- 2. i18n (TRANSLATIONS) ---
+        // --- TRANSLATIONS ---
         const translations = {
             he: {
                 logoTitle: "מעבדת AI",
@@ -247,8 +308,7 @@
                 settingsTitle: "הגדרות ויתרה",
                 balanceText: "תמונות שנוצרו:",
                 apiKeyLabel: "מפתח API (Pollinations)",
-                saveKeyBtn: "שמור מפתח",
-                apiKeyDesc: "המפתח נשמר מקומית בדפדפן שלך בלבד.",
+                saveKeyBtn: "עדכן מפתח",
                 historyTitle: "היסטוריה בענן",
                 clearHistoryBtn: "נקה",
                 mainTitle: "מעבדת המודלים של AI",
@@ -258,8 +318,13 @@
                 generatingIn: "מייצר ב-",
                 errorLoading: "שגיאה בטעינת",
                 guest: "אורח",
-                loginWithGoogle: "התחבר עם Google",
-                logout: "התנתק"
+                loginWithGoogle: "התחבר עם Google (אופציונלי)",
+                logout: "התנתק",
+                welcomeTitle: "ברוכים הבאים",
+                welcomeSub: "התחברו כדי לשמור את היצירות שלכם בענן.",
+                howToGetSecret: "איך משיגים מפתח סודי?",
+                helpText: "<li>כנסו לאתר pollinations.ai</li><li>התחברו עם חשבון</li><li>עברו להגדרות והעתיקו את המפתח</li>",
+                startApp: "התחל ליצור"
             },
             en: {
                 logoTitle: "AI Lab",
@@ -267,8 +332,7 @@
                 settingsTitle: "Settings & Balance",
                 balanceText: "Images Generated:",
                 apiKeyLabel: "API Key (Pollinations)",
-                saveKeyBtn: "Save Key",
-                apiKeyDesc: "Your key is stored locally in your browser only.",
+                saveKeyBtn: "Update Key",
                 historyTitle: "Cloud History",
                 clearHistoryBtn: "Clear",
                 mainTitle: "AI Models Laboratory",
@@ -278,28 +342,45 @@
                 generatingIn: "Generating in ",
                 errorLoading: "Error loading ",
                 guest: "Guest",
-                loginWithGoogle: "Sign in with Google",
-                logout: "Logout"
+                loginWithGoogle: "Sign in with Google (Optional)",
+                logout: "Logout",
+                welcomeTitle: "Welcome",
+                welcomeSub: "Sign in to save your creations to the cloud.",
+                howToGetSecret: "How to get a secret key?",
+                helpText: "<li>Go to pollinations.ai</li><li>Sign in to your account</li><li>Go to Settings and copy the Key</li>",
+                startApp: "Start Creating"
             }
         };
 
-        // --- 3. STATE MANAGEMENT ---
+        // --- STATE MANAGEMENT ---
         let state = {
             lang: localStorage.getItem('appLang') || 'he',
+            theme: localStorage.getItem('appTheme') || 'dark', // ברירת מחדל: חושך
             apiKey: localStorage.getItem('pollinationsApiKey') || '',
             usageCount: parseInt(localStorage.getItem('pollinationsUsageCount') || '0'),
             history: JSON.parse(localStorage.getItem('promptHistory') || '[]')
         };
 
-        // --- 4. DOM ELEMENTS ---
+        // --- DOM ELEMENTS ---
         const htmlRoot = document.getElementById('html-root');
         const langBtn = document.getElementById('lang-btn');
+        const langText = document.getElementById('lang-text');
+        const themeBtn = document.getElementById('theme-btn');
+        const themeIconLight = document.getElementById('theme-icon-light');
+        const themeIconDark = document.getElementById('theme-icon-dark');
+        
         const menuBtn = document.getElementById('menu-btn');
         const closeSidebarBtn = document.getElementById('close-sidebar');
         const sidebar = document.getElementById('sidebar');
         const sidebarOverlay = document.getElementById('sidebar-overlay');
         
-        const loginBtn = document.getElementById('login-btn');
+        const splashScreen = document.getElementById('splash-screen');
+        const splashLoginBtn = document.getElementById('splash-login-btn');
+        const splashApiKey = document.getElementById('splash-api-key');
+        const splashStartBtn = document.getElementById('splash-start-btn');
+        const toggleHelpBtn = document.getElementById('toggle-help-btn');
+        const helpBox = document.getElementById('help-box');
+
         const logoutBtn = document.getElementById('logout-btn');
         const userAvatar = document.getElementById('user-avatar');
         const userAvatarPlaceholder = document.getElementById('user-avatar-placeholder');
@@ -319,21 +400,29 @@
         const submitBtn = document.getElementById('submit-btn');
         const modelBadges = document.getElementById('model-badges');
 
-        // --- 5. INITIALIZATION ---
+        // --- INITIALIZATION ---
         function init() {
             MODELS.forEach(m => {
                 const badge = document.createElement('span');
-                badge.className = "bg-gray-800/80 px-3 py-1.5 rounded-full border border-gray-700/50 backdrop-blur-sm";
+                badge.className = "bg-white dark:bg-gray-800 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm";
                 badge.innerText = m.name;
                 modelBadges.appendChild(badge);
             });
 
             applyLanguage();
+            applyTheme();
             updateProfileUI();
             renderHistory();
             lucide.createIcons();
             
-            // Authentication setup for Canvas Environment if needed
+            // Check API Key for Splash Screen
+            if (state.apiKey) {
+                splashScreen.classList.add('opacity-0', 'pointer-events-none');
+                setTimeout(() => splashScreen.classList.add('hidden'), 500);
+            } else {
+                splashStartBtn.disabled = true;
+            }
+            
             const initAuthCanvas = async () => {
                 try {
                     if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -346,25 +435,71 @@
             initAuthCanvas();
         }
 
+        // --- THEME LOGIC (Dark/Light) ---
+        function applyTheme() {
+            if (state.theme === 'dark') {
+                htmlRoot.classList.add('dark');
+                themeIconLight.classList.remove('hidden'); // מראה שמש כדי לעבור ליום
+                themeIconDark.classList.add('hidden');
+            } else {
+                htmlRoot.classList.remove('dark');
+                themeIconLight.classList.add('hidden');
+                themeIconDark.classList.remove('hidden'); // מראה ירח כדי לעבור ללילה
+            }
+        }
+
+        themeBtn.addEventListener('click', () => {
+            state.theme = state.theme === 'dark' ? 'light' : 'dark';
+            localStorage.setItem('appTheme', state.theme);
+            applyTheme();
+        });
+
+        // --- SPLASH SCREEN LOGIC ---
+        splashApiKey.addEventListener('input', (e) => {
+            splashStartBtn.disabled = e.target.value.trim().length < 5;
+        });
+
+        toggleHelpBtn.addEventListener('click', () => {
+            helpBox.classList.toggle('hidden');
+        });
+
+        splashStartBtn.addEventListener('click', () => {
+            const key = splashApiKey.value.trim();
+            if (key) {
+                state.apiKey = key;
+                localStorage.setItem('pollinationsApiKey', key);
+                updateProfileUI();
+                
+                // אנימציית העלמה
+                splashScreen.classList.add('opacity-0', 'pointer-events-none');
+                setTimeout(() => splashScreen.classList.add('hidden'), 500);
+            }
+        });
+
+        splashLoginBtn.addEventListener('click', async () => {
+            try {
+                await signInWithPopup(auth, googleProvider);
+                splashLoginBtn.innerText = state.lang === 'he' ? "מחובר בהצלחה!" : "Logged In!";
+                splashLoginBtn.classList.replace('text-gray-900', 'text-green-600');
+            } catch (error) {
+                console.error("Login failed:", error);
+            }
+        });
+
+
         // --- FIREBASE AUTH & FIRESTORE SYNC ---
         onAuthStateChanged(auth, (user) => {
             if (user && !user.isAnonymous) {
                 currentUser = user;
-                
-                // עדכון ממשק למשתמש מחובר
                 userNameDisplay.innerText = user.displayName || "משתמש רשום";
                 if (user.photoURL) {
                     userAvatar.src = user.photoURL;
                     userAvatar.classList.remove('hidden');
                     userAvatarPlaceholder.classList.add('hidden');
                 }
-                loginBtn.classList.add('hidden');
                 logoutBtn.classList.remove('hidden');
 
-                // האזנה לשינויים במסד הנתונים בענן (Firestore)
                 if (unsubscribeSnapshot) unsubscribeSnapshot();
-                
-                // היררכיית הפרויקט בענן (מודל מאובטח)
                 const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'data', 'main');
                 
                 unsubscribeSnapshot = onSnapshot(docRef, (docSnap) => {
@@ -373,14 +508,18 @@
                         state.usageCount = data.usageCount || 0;
                         state.history = data.history || [];
                         
-                        // גיבוי לוקאלי
+                        // אם יש לו API KEY בענן, נמשוך גם אותו שיחסוך לו להקליד
+                        if (data.apiKey && !state.apiKey) {
+                            state.apiKey = data.apiKey;
+                            localStorage.setItem('pollinationsApiKey', state.apiKey);
+                            splashScreen.classList.add('hidden'); // מעלים את מסך הפתיחה
+                        }
+
                         localStorage.setItem('pollinationsUsageCount', state.usageCount);
                         localStorage.setItem('promptHistory', JSON.stringify(state.history));
-                        
                         renderHistory();
                         updateProfileUI();
                     } else {
-                        // משתמש חדש לגמרי – שומרים את הנתונים הלוקאליים שלו לענן
                         syncToCloud();
                     }
                 }, (error) => console.error("Firestore sync error:", error));
@@ -392,14 +531,11 @@
                     unsubscribeSnapshot = null;
                 }
                 
-                // איפוס ממשק למצב אורח
                 userNameDisplay.innerText = translations[state.lang].guest;
                 userAvatar.classList.add('hidden');
                 userAvatarPlaceholder.classList.remove('hidden');
-                loginBtn.classList.remove('hidden');
                 logoutBtn.classList.add('hidden');
                 
-                // משיכה מ-LocalStorage
                 state.usageCount = parseInt(localStorage.getItem('pollinationsUsageCount') || '0');
                 state.history = JSON.parse(localStorage.getItem('promptHistory') || '[]');
                 renderHistory();
@@ -410,11 +546,11 @@
         async function syncToCloud() {
             if (!currentUser || currentUser.isAnonymous) return;
             try {
-                // שומרים את ההיסטוריה והכמות במסמך בודד בענן
                 const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'data', 'main');
                 await setDoc(docRef, {
                     usageCount: state.usageCount,
                     history: state.history,
+                    apiKey: state.apiKey, // שומרים גם את המפתח בסנכרון לענן
                     lastUpdated: new Date().toISOString()
                 }, { merge: true });
             } catch (error) {
@@ -422,36 +558,24 @@
             }
         }
 
-        loginBtn.addEventListener('click', async () => {
-            try {
-                await signInWithPopup(auth, googleProvider);
-            } catch (error) {
-                console.error("Login failed:", error);
-            }
-        });
-
         logoutBtn.addEventListener('click', async () => {
-            try {
-                await signOut(auth);
-            } catch (error) {
-                console.error("Logout failed:", error);
-            }
+            try { await signOut(auth); } catch (error) { console.error("Logout error:", error); }
         });
 
-        // --- 6. LANGUAGE LOGIC ---
+        // --- LANGUAGE LOGIC ---
         langBtn.addEventListener('click', () => {
             state.lang = state.lang === 'he' ? 'en' : 'he';
             localStorage.setItem('appLang', state.lang);
             applyLanguage();
-            // עדכון המילה "אורח" במידה ולא מחובר
             if (!currentUser) userNameDisplay.innerText = translations[state.lang].guest;
         });
 
         function applyLanguage() {
             htmlRoot.dir = state.lang === 'he' ? 'rtl' : 'ltr';
             htmlRoot.lang = state.lang;
-            langBtn.innerText = state.lang === 'he' ? 'EN' : 'עב';
+            langText.innerText = state.lang === 'he' ? 'EN' : 'עב';
             
+            // תפריט הצד נפתח מהכיוון שבו נמצא הכפתור (ימין בעברית, שמאל באנגלית)
             if (state.lang === 'he') {
                 sidebar.classList.remove('left-0', 'border-r');
                 sidebar.classList.add('right-0', 'border-l');
@@ -460,16 +584,23 @@
                 sidebar.classList.add('left-0', 'border-r');
             }
             
+            // הפעלת LTR-Flip לאייקונים (כמו חץ התחלה)
+            document.querySelectorAll('.rtl-flip').forEach(el => {
+                el.style.transform = state.lang === 'he' ? 'rotate(0deg)' : 'rotate(180deg)';
+            });
+            
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
                 if (translations[state.lang][key]) {
-                    el.innerText = translations[state.lang][key];
+                    // לחלק מהאלמנטים יש HTML פנימי
+                    if(key === 'helpText') el.innerHTML = translations[state.lang][key];
+                    else el.innerText = translations[state.lang][key];
                 }
             });
             input.placeholder = translations[state.lang].promptPlaceholder;
         }
 
-        // --- 7. SIDEBAR LOGIC ---
+        // --- SIDEBAR LOGIC ---
         function toggleSidebar(show) {
             if (show) {
                 sidebarOverlay.classList.remove('hidden');
@@ -488,36 +619,32 @@
         closeSidebarBtn.addEventListener('click', () => toggleSidebar(false));
         sidebarOverlay.addEventListener('click', () => toggleSidebar(false));
 
-        // --- 8. PROFILE & SETTINGS ---
+        // --- PROFILE & SETTINGS ---
         function updateProfileUI() {
             apiKeyInput.value = state.apiKey;
             usageCountDisplay.innerText = state.usageCount;
             tierDisplay.innerText = state.apiKey ? "Tier: Pro (API Key)" : "Tier: Free";
-            if (state.apiKey) {
-                tierDisplay.classList.add('text-green-400');
-            } else {
-                tierDisplay.classList.remove('text-green-400');
-            }
+            if (state.apiKey) tierDisplay.classList.add('text-green-500');
+            else tierDisplay.classList.remove('text-green-500');
         }
 
         saveKeyBtn.addEventListener('click', () => {
             state.apiKey = apiKeyInput.value.trim();
-            localStorage.setItem('pollinationsApiKey', state.apiKey); // שומר תמיד לוקאלית מטעמי אבטחה
+            localStorage.setItem('pollinationsApiKey', state.apiKey); 
+            syncToCloud();
             
             const originalText = saveKeyBtn.innerText;
             saveKeyBtn.innerText = state.lang === 'he' ? "נשמר בהצלחה!" : "Saved!";
-            saveKeyBtn.classList.replace('bg-blue-600', 'bg-green-600');
-            saveKeyBtn.classList.replace('hover:bg-blue-700', 'hover:bg-green-700');
+            saveKeyBtn.classList.add('bg-green-500', 'text-white');
             updateProfileUI();
             
             setTimeout(() => {
                 saveKeyBtn.innerText = originalText;
-                saveKeyBtn.classList.replace('bg-green-600', 'bg-blue-600');
-                saveKeyBtn.classList.replace('hover:bg-green-700', 'hover:bg-blue-700');
+                saveKeyBtn.classList.remove('bg-green-500', 'text-white');
             }, 2000);
         });
 
-        // --- 9. HISTORY LOGIC ---
+        // --- HISTORY LOGIC ---
         function saveToHistory(promptStr) {
             state.history = state.history.filter(h => h.prompt !== promptStr);
             state.history.unshift({
@@ -527,23 +654,23 @@
             if (state.history.length > 20) state.history.pop();
             
             localStorage.setItem('promptHistory', JSON.stringify(state.history));
-            syncToCloud(); // סנכרון לענן אם המשתמש מחובר!
+            syncToCloud(); 
             renderHistory();
         }
 
         function renderHistory() {
             historyList.innerHTML = '';
             if (state.history.length === 0) {
-                historyList.innerHTML = `<p class="text-xs text-gray-500 text-center py-4">${state.lang === 'he' ? 'אין היסטוריה עדיין' : 'No history yet'}</p>`;
+                historyList.innerHTML = `<p class="text-xs text-gray-400 text-center py-4">${state.lang === 'he' ? 'אין היסטוריה עדיין' : 'No history yet'}</p>`;
                 return;
             }
 
             state.history.forEach(item => {
                 const div = document.createElement('div');
-                div.className = "group flex items-center justify-between bg-gray-900/50 p-3 rounded-lg border border-gray-800 hover:border-gray-600 cursor-pointer transition-colors";
+                div.className = "group flex items-center justify-between bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-blue-400 cursor-pointer transition-colors shadow-sm";
                 
                 const textDiv = document.createElement('div');
-                textDiv.className = "truncate text-sm text-gray-300 group-hover:text-white";
+                textDiv.className = "truncate text-sm text-gray-700 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400";
                 textDiv.innerText = item.prompt;
                 
                 div.appendChild(textDiv);
@@ -565,7 +692,7 @@
             renderHistory();
         });
 
-        // --- 10. IMAGE GENERATION LOGIC ---
+        // --- IMAGE GENERATION LOGIC ---
         form.addEventListener('submit', (e) => {
             e.preventDefault();
             const prompt = input.value.trim();
@@ -605,13 +732,13 @@
 
             for (const model of MODELS) {
                 const card = document.createElement('div');
-                card.className = 'bg-gray-800 rounded-2xl overflow-hidden border border-gray-700 shadow-2xl relative group aspect-square flex flex-col items-center justify-center';
+                card.className = 'bg-gray-100 dark:bg-gray-800 rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-xl relative group aspect-square flex flex-col items-center justify-center';
                 
                 const loaderContainer = document.createElement('div');
-                loaderContainer.className = 'absolute inset-0 flex flex-col items-center justify-center z-10 bg-gray-800/80 backdrop-blur-sm';
+                loaderContainer.className = 'absolute inset-0 flex flex-col items-center justify-center z-10 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm';
                 loaderContainer.innerHTML = `
                     <div class="loader mb-4"></div>
-                    <p class="text-blue-400 font-medium text-sm px-4 text-center">${translations[state.lang].generatingIn}${model.name}</p>
+                    <p class="text-blue-600 dark:text-blue-400 font-medium text-sm px-4 text-center">${translations[state.lang].generatingIn}${model.name}</p>
                 `;
                 card.appendChild(loaderContainer);
 
@@ -635,18 +762,18 @@
                 img.onerror = () => {
                     loaderContainer.innerHTML = `
                         <i data-lucide="image-off" class="w-10 h-10 text-red-500 mb-2"></i>
-                        <p class="text-red-400 font-medium text-sm text-center px-4">${translations[state.lang].errorLoading}${model.name}</p>
+                        <p class="text-red-500 font-medium text-sm text-center px-4">${translations[state.lang].errorLoading}${model.name}</p>
                     `;
                     lucide.createIcons();
                     checkAllLoaded();
                 };
 
                 const badge = document.createElement('div');
-                badge.className = 'absolute top-3 right-3 bg-black/70 text-white px-3 py-1.5 rounded-xl text-xs font-semibold tracking-wide z-30 backdrop-blur-md border border-gray-600/50 shadow-lg';
+                badge.className = 'absolute top-3 right-3 bg-black/70 text-white px-3 py-1.5 rounded-xl text-xs font-semibold tracking-wide z-30 backdrop-blur-md border border-gray-600/50 shadow-sm';
                 badge.innerText = model.name;
 
                 const downloadBtn = document.createElement('button');
-                downloadBtn.className = 'absolute bottom-3 right-3 bg-blue-600/90 hover:bg-blue-500 text-white p-2 rounded-xl z-30 opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-md shadow-lg';
+                downloadBtn.className = 'absolute bottom-3 right-3 bg-blue-600/90 hover:bg-blue-500 text-white p-2.5 rounded-xl z-30 opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-md shadow-lg';
                 downloadBtn.innerHTML = '<i data-lucide="download" class="w-4 h-4"></i>';
                 downloadBtn.onclick = (e) => {
                     e.stopPropagation();
@@ -680,8 +807,7 @@
             state.usageCount++;
             localStorage.setItem('pollinationsUsageCount', state.usageCount.toString());
             usageCountDisplay.innerText = state.usageCount;
-            // כל פעם שנוצרת תמונה חדשה (מונה עולה), נעדכן בענן
-            if (state.usageCount % MODELS.length === 0) { // מעדכן פעם אחת בסוף סבב יצירה כדי לחסוך קריאות לשרת
+            if (state.usageCount % MODELS.length === 0) {
                 syncToCloud(); 
             }
         }
