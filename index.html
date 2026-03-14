@@ -772,27 +772,41 @@
                 const item = imageCards[i];
                 console.log(`\n▶️ [${i+1}/${MODELS.length}] Starting processing for model: ${item.model.name} (${item.model.id})`);
                 
-                // --- התיקון הקריטי: מעבר לדומיין החדש של Pollinations (gen) והוספת .jpg ---
                 let baseUrl = `https://gen.pollinations.ai/image/${encodedPrompt}.jpg?model=${item.model.id}&width=1024&height=1024&nologo=true&seed=${seed}`;
                 
-                // 2. בדיקה בטוחה: רק אם יש מפתח סודי תקין, נוסיף אותו לקישור!
-                if (state.apiKey && state.apiKey.trim() !== "") {
-                    const safeKey = encodeURIComponent(state.apiKey.trim());
-                    baseUrl += `&key=${safeKey}`;
-                }
-                
-                console.log(`🌐 Exact URL requested: ${baseUrl}`);
+                console.log(`🌐 Exact base URL: ${baseUrl}`);
                 
                 const statusText = document.getElementById(`status-${item.model.id}`);
                 const spinner = document.getElementById(`spinner-${item.model.id}`);
                 
-                // עדכון סטטוס למודל הנוכחי
                 if(statusText) statusText.innerText = state.lang === 'he' ? `מייצר את ${item.model.name}...` : `Creating ${item.model.name}...`;
 
-                // ממתינים עד שהתמונה יורדת לדפדפן (אבל לא מציגים אותה עדיין!)
-                await new Promise((resolve) => {
-                    console.log(`⏳ Waiting for image download to complete for ${item.model.id}...`);
+                // הפעלת תהליך ההורדה
+                await new Promise(async (resolve) => {
+                    let finalSrc = baseUrl;
                     
+                    // שלב 1: מנסים להשתמש ב-fetch מוגן עם Header (כמו פייתון)
+                    if (state.apiKey && state.apiKey.trim() !== "") {
+                        try {
+                            console.log(`🔒 Attempting secure fetch with Authorization header for ${item.model.id}...`);
+                            const response = await fetch(baseUrl, {
+                                headers: { 'Authorization': `Bearer ${state.apiKey.trim()}` }
+                            });
+                            
+                            if (response.ok) {
+                                const blob = await response.blob();
+                                finalSrc = URL.createObjectURL(blob);
+                                console.log(`✅ Secure fetch successful! Got image blob.`);
+                            } else {
+                                console.error(`❌ Secure fetch failed with status ${response.status}.`);
+                                // לא עוצרים, אלא נותנים ל-onerror לטפל בנפילה בהמשך
+                            }
+                        } catch (err) {
+                            console.warn(`⚠️ Fetch with headers failed (likely CORS). Falling back to standard URL load.`);
+                        }
+                    }
+
+                    // שלב 2: טעינת התמונה לתוך ה-DOM
                     item.img.onload = () => {
                         console.log(`✅ SUCCESS: Image loaded completely for ${item.model.id}!`);
                         if(statusText) {
@@ -808,7 +822,6 @@
 
                     item.img.onerror = () => {
                         console.error(`❌ ERROR: Failed to load image for ${item.model.id}.`);
-                        console.error(`👉 TIP: Click the URL above in this console to see the exact error message from Pollinations (e.g. "Queue full" or "Internal Error").`);
                         if(statusText) {
                             statusText.innerText = state.lang === 'he' ? 'שגיאה' : 'Error';
                             statusText.classList.replace('text-blue-600', 'text-red-500');
@@ -816,17 +829,22 @@
                         }
                         if(spinner) spinner.style.display = 'none';
                         item.success = false;
-                        resolve();
+                        
+                        // --- התיקון הקריטי לתור מלא (Queue Full) ---
+                        // אם שרת פולינשן קרס או חסם, הוא עדיין "מחזיק" את הבקשה אצלו לעוד כמה שניות.
+                        // כדי לא להיחסם במודל הבא, אנחנו מכריחים את הקוד שלנו לעשות הפסקת צינון!
+                        console.log(`⏳ Forcing a 10-second cooldown to let the server clear its stuck queue...`);
+                        setTimeout(resolve, 10000); 
                     };
 
-                    // מפעיל את הבקשה האמיתית לדפדפן
-                    item.img.src = baseUrl;
+                    // יריית הפתיחה - מזינים את התמונה למסך
+                    item.img.src = finalSrc;
                 });
 
-                // ממתינים 5 שניות בין כל מודל למודל (אלא אם כן זה המודל האחרון)
+                // ממתינים 4 שניות בין כל מודל למודל (אלא אם כן זה המודל האחרון)
                 if (i < imageCards.length - 1) {
-                    console.log(`⏱️ Waiting 5 seconds before hitting the next model to avoid Rate Limits...`);
-                    await new Promise(resolve => setTimeout(resolve, 5000));
+                    console.log(`⏱️ Waiting 4 seconds before hitting the next model...`);
+                    await new Promise(resolve => setTimeout(resolve, 4000));
                 }
             }
 
@@ -835,15 +853,13 @@
             // 3. חשיפת כל התמונות ביחד!
             for (const item of imageCards) {
                 if (item.success) {
-                    // מסתיר את חלון הטעינה וחושף את התמונה והתגים
                     item.loaderContainer.style.opacity = '0';
-                    setTimeout(() => item.loaderContainer.style.display = 'none', 500); // מעלים אותו לחלוטין אחרי האנימציה
+                    setTimeout(() => item.loaderContainer.style.display = 'none', 500); 
                     
                     item.img.classList.remove('opacity-0');
                     document.getElementById(`badge-${item.model.id}`).classList.remove('opacity-0');
                     document.getElementById(`download-${item.model.id}`).classList.remove('hidden');
                 } else {
-                    // מציג הודעת שגיאה אם התמונה נכשלה
                     item.loaderContainer.innerHTML = `
                         <i data-lucide="image-off" class="w-10 h-10 text-red-500 mb-2"></i>
                         <p class="text-red-500 font-medium text-sm text-center px-4">${translations[state.lang].errorLoading}${item.model.name}</p>
