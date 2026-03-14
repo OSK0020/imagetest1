@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Models Gallery</title>
     <link rel="icon" type="image/png" href="favicon.png">
+    
     <!-- Tailwind CSS with Dark Mode config -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -25,7 +26,7 @@
     <style>
         /* Loading Animation */
         .loader {
-            border: 4px solid rgba(156, 163, 175, 0.2); /* צבע שקוף שמתאים לשני המצבים */
+            border: 4px solid rgba(156, 163, 175, 0.2);
             border-left-color: #3b82f6;
             border-radius: 50%;
             width: 40px;
@@ -51,7 +52,7 @@
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col overflow-x-hidden transition-colors duration-300">
 
-    <!-- SPLASH / WELCOME SCREEN (מודל חובה להכנסת סוד) -->
+    <!-- SPLASH / WELCOME SCREEN -->
     <div id="splash-screen" class="fixed inset-0 z-[100] bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4 transition-opacity duration-500">
         <div class="bg-white dark:bg-gray-800 max-w-md w-full p-8 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 text-center relative overflow-hidden">
             <!-- Logo in splash -->
@@ -107,7 +108,7 @@
     <!-- Top Navbar -->
     <header class="flex justify-between items-center p-4 border-b bg-white/80 dark:bg-gray-900/80 border-gray-200 dark:border-gray-800 backdrop-blur-md sticky top-0 z-30 transition-colors">
         
-        <!-- צד התפריט והלוגו (מיושרים לאותו צד עכשיו) -->
+        <!-- צד התפריט והלוגו -->
         <div class="flex items-center gap-3">
             <button id="menu-btn" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300">
                 <i data-lucide="menu" class="w-5 h-5"></i>
@@ -118,15 +119,13 @@
             <span class="font-bold text-xl tracking-wide hidden sm:block text-gray-900 dark:text-white" data-i18n="logoTitle">מעבדת AI</span>
         </div>
         
-        <!-- כפתורי שפה ועיצוב (בצד השני) -->
+        <!-- כפתורי שפה ועיצוב -->
         <div class="flex items-center gap-2">
-            <!-- כפתור מצב לילה/יום -->
             <button id="theme-btn" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300" title="שנה מצב תצוגה">
                 <i data-lucide="sun" id="theme-icon-light" class="w-5 h-5 hidden"></i>
                 <i data-lucide="moon" id="theme-icon-dark" class="w-5 h-5"></i>
             </button>
 
-            <!-- כפתור שפה עם כדור הארץ -->
             <button id="lang-btn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-sm font-medium transition-colors border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300">
                 <i data-lucide="globe" class="w-4 h-4 text-blue-500"></i>
                 <span id="lang-text">EN</span>
@@ -137,7 +136,7 @@
     <!-- Sidebar Overlay -->
     <div id="sidebar-overlay" class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden z-40 transition-opacity"></div>
 
-    <!-- Sidebar / Drawer (נפתח מהצד שבו נמצא הכפתור) -->
+    <!-- Sidebar / Drawer -->
     <aside id="sidebar" class="fixed top-0 bottom-0 w-80 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 z-50 sidebar-transition flex flex-col shadow-2xl transition-colors" style="transform: translateX(100%);">
         
         <!-- Sidebar Header -->
@@ -207,7 +206,7 @@
         </div>
     </aside>
 
-    <!-- Main Content - הוספנו pb-56 כדי לאפשר גלילה נוחה עד למטה מבלי ששורת החיפוש תסתיר -->
+    <!-- Main Content -->
     <main class="flex-grow p-4 md:p-8 overflow-y-auto pb-56" id="main-content">
         <div class="max-w-7xl mx-auto text-center mt-6 lg:mt-10 transition-all duration-500" id="welcome-screen">
             <h1 class="text-4xl md:text-6xl font-extrabold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500" data-i18n="mainTitle">
@@ -355,7 +354,7 @@
         // --- STATE MANAGEMENT ---
         let state = {
             lang: localStorage.getItem('appLang') || 'he',
-            theme: localStorage.getItem('appTheme') || 'dark', // ברירת מחדל: חושך
+            theme: localStorage.getItem('appTheme') || 'dark',
             apiKey: localStorage.getItem('pollinationsApiKey') || '',
             usageCount: parseInt(localStorage.getItem('pollinationsUsageCount') || '0'),
             history: JSON.parse(localStorage.getItem('promptHistory') || '[]')
@@ -415,7 +414,7 @@
             renderHistory();
             lucide.createIcons();
             
-            // Check API Key for Splash Screen
+            // בדיקה האם יש מפתח קיים כדי לדלג על מסך הפתיחה
             if (state.apiKey) {
                 splashScreen.classList.add('opacity-0', 'pointer-events-none');
                 setTimeout(() => splashScreen.classList.add('hidden'), 500);
@@ -439,12 +438,12 @@
         function applyTheme() {
             if (state.theme === 'dark') {
                 htmlRoot.classList.add('dark');
-                themeIconLight.classList.remove('hidden'); // מראה שמש כדי לעבור ליום
+                themeIconLight.classList.remove('hidden'); 
                 themeIconDark.classList.add('hidden');
             } else {
                 htmlRoot.classList.remove('dark');
                 themeIconLight.classList.add('hidden');
-                themeIconDark.classList.remove('hidden'); // מראה ירח כדי לעבור ללילה
+                themeIconDark.classList.remove('hidden'); 
             }
         }
 
@@ -469,6 +468,7 @@
                 state.apiKey = key;
                 localStorage.setItem('pollinationsApiKey', key);
                 updateProfileUI();
+                syncToCloud(); // שומר את המפתח בענן
                 
                 // אנימציית העלמה
                 splashScreen.classList.add('opacity-0', 'pointer-events-none');
@@ -508,11 +508,10 @@
                         state.usageCount = data.usageCount || 0;
                         state.history = data.history || [];
                         
-                        // אם יש לו API KEY בענן, נמשוך גם אותו שיחסוך לו להקליד
                         if (data.apiKey && !state.apiKey) {
                             state.apiKey = data.apiKey;
                             localStorage.setItem('pollinationsApiKey', state.apiKey);
-                            splashScreen.classList.add('hidden'); // מעלים את מסך הפתיחה
+                            splashScreen.classList.add('hidden'); 
                         }
 
                         localStorage.setItem('pollinationsUsageCount', state.usageCount);
@@ -550,7 +549,7 @@
                 await setDoc(docRef, {
                     usageCount: state.usageCount,
                     history: state.history,
-                    apiKey: state.apiKey, // שומרים גם את המפתח בסנכרון לענן
+                    apiKey: state.apiKey, 
                     lastUpdated: new Date().toISOString()
                 }, { merge: true });
             } catch (error) {
@@ -575,7 +574,6 @@
             htmlRoot.lang = state.lang;
             langText.innerText = state.lang === 'he' ? 'EN' : 'עב';
             
-            // תפריט הצד נפתח מהכיוון שבו נמצא הכפתור (ימין בעברית, שמאל באנגלית)
             if (state.lang === 'he') {
                 sidebar.classList.remove('left-0', 'border-r');
                 sidebar.classList.add('right-0', 'border-l');
@@ -584,7 +582,6 @@
                 sidebar.classList.add('left-0', 'border-r');
             }
             
-            // הפעלת LTR-Flip לאייקונים (כמו חץ התחלה)
             document.querySelectorAll('.rtl-flip').forEach(el => {
                 el.style.transform = state.lang === 'he' ? 'rotate(0deg)' : 'rotate(180deg)';
             });
@@ -592,7 +589,6 @@
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
                 if (translations[state.lang][key]) {
-                    // לחלק מהאלמנטים יש HTML פנימי
                     if(key === 'helpText') el.innerHTML = translations[state.lang][key];
                     else el.innerText = translations[state.lang][key];
                 }
@@ -702,21 +698,7 @@
             generateImages(prompt);
         });
 
-        async function fetchImageWithKey(url, apiKey) {
-            if (!apiKey) return url;
-            try {
-                const res = await fetch(url, {
-                    headers: { "Authorization": `Bearer ${apiKey}` }
-                });
-                if (!res.ok) throw new Error("Network response was not ok");
-                const blob = await res.blob();
-                return URL.createObjectURL(blob);
-            } catch (error) {
-                console.error("Fetch failed, falling back to basic URL:", error);
-                return url;
-            }
-        }
-
+        // פונקציית יצירת התמונות המעודכנת (ללא Fetch שחוסם CORS)
         async function generateImages(prompt) {
             welcomeScreen.classList.add('hidden');
             gallery.classList.remove('hidden');
@@ -746,11 +728,11 @@
                 img.className = 'w-full h-full object-cover opacity-0 transition-opacity duration-700 z-20 relative';
                 img.alt = `Generated by ${model.name}`;
                 
+                // יצירת הכתובת הישירה (עוקף בעיות CORS כיוון שאנחנו לא שולחים Header מיוחד)
                 const baseUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?model=${model.id}&width=1024&height=1024&nologo=true&seed=${seed}`;
 
-                fetchImageWithKey(baseUrl, state.apiKey).then(finalUrl => {
-                    img.src = finalUrl;
-                });
+                // טעינה ישירה של התמונה
+                img.src = baseUrl;
 
                 img.onload = () => {
                     loaderContainer.style.display = 'none';
@@ -777,10 +759,8 @@
                 downloadBtn.innerHTML = '<i data-lucide="download" class="w-4 h-4"></i>';
                 downloadBtn.onclick = (e) => {
                     e.stopPropagation();
-                    const a = document.createElement('a');
-                    a.href = img.src;
-                    a.download = `pollinations-${model.id}-${seed}.jpg`;
-                    a.click();
+                    // כדי להוריד תמונה שמקורה בדומיין אחר (Pollinations) אנחנו מנווטים אליה
+                    window.open(img.src, '_blank');
                 };
 
                 card.appendChild(img);
