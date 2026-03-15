@@ -1,6 +1,6 @@
 🎨 AI Models Laboratory (Pollinations Gallery)
 
-A high-performance, fully responsive web application that generates images from a single text prompt across 9 different state-of-the-art AI models simultaneously.
+A high-performance, fully responsive web application generating images from a single text prompt across 9 different state-of-the-art AI models simultaneously.
 
 Built to demonstrate advanced API handling, sequential asynchronous loading, and rate-limit bypassing.
 
@@ -18,23 +18,65 @@ Beautiful UI: Glassmorphism design, fully responsive, with Dark/Light mode and f
 
 🚀 Models Included
 
-Flux Schnell (flux)
+#
 
-FLUX.2 Dev (flux-2-dev)
+Model Name
 
-Dirtberry (dirtberry)
+API Code
 
-Z-Image Turbo (zimage)
+1
 
-Imagen 4 (imagen-4)
+Flux Schnell
 
-Grok Imagine (grok-imagine)
+flux
 
-FLUX.2 Klein 4B (klein)
+2
 
-GPT Image 1 Mini (gptimage)
+FLUX.2 Dev
 
-FLUX.2 Klein 9B (klein-large)
+flux-2-dev
+
+3
+
+Dirtberry
+
+dirtberry
+
+4
+
+Z-Image Turbo
+
+zimage
+
+5
+
+Imagen 4
+
+imagen-4
+
+6
+
+Grok Imagine
+
+grok-imagine
+
+7
+
+FLUX.2 Klein 4B
+
+klein
+
+8
+
+GPT Image 1 Mini
+
+gptimage
+
+9
+
+FLUX.2 Klein 9B
+
+klein-large
 
 🛠️ Tech Stack
 
