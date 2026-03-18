@@ -2,35 +2,44 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Aperture, ArrowRight, HelpCircle, Loader2, Lock, ShieldCheck, Mail, Info, AlertTriangle } from 'lucide-react';
+import { Aperture, HelpCircle, Loader2, Lock, ShieldCheck, Info, AlertTriangle, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from './AuthProvider';
+import { Language, translations } from '@/lib/translations';
 
 interface SplashScreenProps {
   onConnect: (key: string) => Promise<boolean>;
   isVerifying: boolean;
+  language?: Language;
 }
 
-export default function SplashScreen({ onConnect, isVerifying }: SplashScreenProps) {
+export default function SplashScreen({ onConnect, isVerifying, language = 'en' }: SplashScreenProps) {
   const [key, setKey] = useState('');
   const [showHelp, setShowHelp] = useState(false);
+  const [hasPermission, setHasPermission] = useState(false);
   const [errorStatus, setErrorStatus] = useState<string | null>(null);
   const { user, signIn } = useAuth();
+  
+  const t = translations[language];
 
   const handleStart = async () => {
     if (!key.trim()) {
-      setErrorStatus('Please provide a secret key to proceed.');
+      setErrorStatus(language === 'he' ? 'אנא הזן מפתח סודי כדי להמשיך.' : 'Please provide a secret key to proceed.');
       return;
     }
     
+    if (!hasPermission) {
+      setErrorStatus(language === 'he' ? 'עליך לאשר את הגישה לנתוני החשבון שלך.' : 'You must authorize access to your account data.');
+      return;
+    }
+
     setErrorStatus(null);
     const success = await onConnect(key);
     if (!success) {
-      setErrorStatus('Invalid or inactive secret key. Please double-check your credentials.');
+      setErrorStatus(language === 'he' ? 'מפתח שגוי או לא פעיל. אנא בדוק את הפרטים.' : 'Invalid or inactive secret key. Please double-check your credentials.');
     }
   };
 
-  // Clear error after some time
   useEffect(() => {
     if (errorStatus) {
       const timer = setTimeout(() => setErrorStatus(null), 5000);
@@ -40,17 +49,14 @@ export default function SplashScreen({ onConnect, isVerifying }: SplashScreenPro
 
   return (
     <div className="relative min-h-screen flex items-center justify-center p-6 bg-slate-50 dark:bg-[#0F071A] transition-colors duration-500 overflow-hidden">
-      {/* Dynamic Background Elements */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-500/10 dark:bg-purple-600/20 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/10 dark:bg-blue-600/20 rounded-full blur-[120px] pointer-events-none" />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
         className="relative z-10 w-full max-w-[480px] mx-auto"
       >
-        {/* Custom Error Toast */}
         <AnimatePresence>
           {errorStatus && (
             <motion.div
@@ -67,29 +73,23 @@ export default function SplashScreen({ onConnect, isVerifying }: SplashScreenPro
           )}
         </AnimatePresence>
 
-        <div 
-          className="backdrop-blur-[40px] border border-slate-200 dark:border-white/10 rounded-[3rem] p-8 md:p-12 shadow-[0_40px_100px_rgba(0,0,0,0.05)] dark:shadow-[0_40px_100px_rgba(0,0,0,0.8)] overflow-hidden relative group flex flex-col items-center bg-white/70 dark:bg-[#0F071A]/80"
-        >
+        <div className="backdrop-blur-[40px] border border-slate-200 dark:border-white/10 rounded-[3rem] p-8 md:p-12 shadow-2xl flex flex-col items-center bg-white/70 dark:bg-[#0F071A]/80">
           <div className="relative z-10 w-full flex flex-col items-center">
-            {/* Logo Section */}
             <motion.div
-              whileHover={{ scale: 1.05, rotate: 5 }}
+              whileHover={{ scale: 1.05 }}
               className="w-20 h-20 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-[2rem] flex items-center justify-center mb-8 shadow-2xl p-0.5 border border-white/20"
             >
-              <div className="w-full h-full rounded-[1.8rem] border border-white/20 flex items-center justify-center animate-[spin_30s_linear_infinite]">
-                <Aperture className="w-10 h-10 text-white" />
-              </div>
+              <Aperture className="w-10 h-10 text-white animate-spin-slow" />
             </motion.div>
 
             <h1 className="text-4xl font-black text-center mb-2 tracking-tighter dark:text-white text-slate-900">
-              AI Lab <span className="text-purple-500">Modern</span>
+              {language === 'he' ? <><span className="text-purple-500">בינה מלאכותית</span> מעבדת</> : <>AI Lab <span className="text-purple-500">Modern</span></>}
             </h1>
             
             <p className="text-slate-500 dark:text-gray-400 text-center mb-10 text-base font-medium leading-relaxed max-w-[280px]">
-              Securely access professional AI model generation.
+              {language === 'he' ? 'גישה מאובטחת לייצור תמונות בבינה מלאכותית.' : 'Securely access professional AI model generation.'}
             </p>
 
-            {/* Google Sign-In (Optional) */}
             <div className="w-full mb-8">
               <button
                 onClick={signIn}
@@ -113,23 +113,22 @@ export default function SplashScreen({ onConnect, isVerifying }: SplashScreenPro
                       <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
                       <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                     </svg>
-                    Sign in with Google
+                    {language === 'he' ? 'התחבר עם גוגל' : 'Sign in with Google'}
                   </>
                 )}
               </button>
               <p className="text-[10px] text-center mt-3 text-slate-400 uppercase font-black tracking-widest opacity-50">
-                OR PROCEED WITH SECRET KEY
+                {language === 'he' ? 'או המשך עם מפתח סודי' : 'OR PROCEED WITH SECRET KEY'}
               </p>
             </div>
 
-            {/* Mandatory Secret Key Section */}
             <div className="w-full space-y-4">
               <div className="relative w-full group/input">
                 <input
                   type="password"
                   value={key}
                   onChange={(e) => setKey(e.target.value)}
-                  placeholder="Paste your Secret Key (sk_...)"
+                  placeholder={language === 'he' ? 'הדבק את המפתח הסודי שלך (sk_...)' : 'Paste your Secret Key (sk_...)'}
                   className={cn(
                     "w-full border rounded-2xl py-4 pl-14 pr-6 bg-slate-50 dark:bg-black/40 outline-none transition-all text-lg font-medium",
                     "border-slate-200 dark:border-white/10 dark:text-white text-slate-900 focus:ring-2 focus:ring-purple-500/50",
@@ -145,7 +144,35 @@ export default function SplashScreen({ onConnect, isVerifying }: SplashScreenPro
                 </div>
               </div>
 
-              {/* Instructions */}
+              <label className="flex items-start gap-3 p-4 bg-white/5 border border-white/5 rounded-2xl cursor-pointer hover:bg-white/10 transition-all">
+                 <input 
+                   type="checkbox" 
+                   checked={hasPermission}
+                   onChange={(e) => setHasPermission(e.target.checked)}
+                   className="mt-1 accent-purple-600 w-4 h-4 rounded-lg"
+                 />
+                 <span className="text-[11px] font-medium text-slate-500 dark:text-gray-400 leading-tight">
+                    {language === 'he' 
+                      ? 'אני מאשר גישה מאובטחת שתציג את נתוני הפרופיל ויתרת ה-Pollen שלי מ-Pollinations.ai.' 
+                      : 'I authorize secure access to display my profile data and Pollen balance from Pollinations.ai.'}
+                 </span>
+              </label>
+
+              <button
+                onClick={handleStart}
+                disabled={isVerifying}
+                className="w-full py-4 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white rounded-2xl font-black transition-all flex items-center justify-center gap-2 group"
+              >
+                {isVerifying ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <>
+                    {language === 'he' ? 'התחבר למעבדה' : 'Connect to Lab'}
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </>
+                )}
+              </button>
+
               <div className="flex flex-col gap-2">
                 <button
                   type="button"
@@ -153,7 +180,7 @@ export default function SplashScreen({ onConnect, isVerifying }: SplashScreenPro
                   className="flex items-center gap-2 text-xs font-bold text-purple-600 dark:text-purple-400 hover:opacity-80 transition-opacity w-fit"
                 >
                   <HelpCircle className="w-4 h-4" />
-                  How do I find my Secret Key?
+                  {language === 'he' ? 'איך מוצאים את המפתח הסודי?' : 'How do I find my Secret Key?'}
                 </button>
                 
                 <AnimatePresence>
@@ -168,12 +195,25 @@ export default function SplashScreen({ onConnect, isVerifying }: SplashScreenPro
                         <div className="flex gap-3">
                           <div className="p-2 bg-purple-500/20 rounded-lg h-fit"><Info className="w-4 h-4 text-purple-500" /></div>
                           <div className="space-y-2">
-                            <p className="font-bold text-purple-600 dark:text-purple-400">Strict Step-by-Step Guide:</p>
+                            <p className="font-bold text-purple-600 dark:text-purple-400">
+                              {language === 'he' ? 'מדריך שלב אחר שלב:' : 'Step-by-Step Guide:'}
+                            </p>
                             <ol className="list-decimal list-inside space-y-1 opacity-80 font-medium">
-                              <li>Go to <a href="https://enter.pollinations.ai" target="_blank" className="underline font-bold text-purple-500">enter.pollinations.ai</a></li>
-                              <li>Sign in with your email or GitHub.</li>
-                              <li>Go to <b>API Management</b> section.</li>
-                              <li>Click <b>Generate New Key</b> & copy the string starting with <code className="bg-white/10 px-1 rounded text-purple-500">sk_</code></li>
+                              {language === 'he' ? (
+                                <>
+                                  <li>התחבר לאתר <a href="https://enter.pollinations.ai" target="_blank" className="underline font-bold text-purple-500">enter.pollinations.ai</a></li>
+                                  <li>עבור למדור <b>API Management</b> מצד שמאל.</li>
+                                  <li>לחץ על <b>Generate New Key</b> ושמור את המפתח שמתחיל ב- <code className="bg-white/10 px-1 rounded text-purple-500">sk_</code></li>
+                                  <li>מפתח זה מאפשר לך להשתמש ב"פולין" (Pollen) שלך באפליקציות חיצוניות.</li>
+                                </>
+                              ) : (
+                                <>
+                                  <li>Log in to <a href="https://enter.pollinations.ai" target="_blank" className="underline font-bold text-purple-500">enter.pollinations.ai</a></li>
+                                  <li>Go to the <b>API Management</b> section on the left sidebar.</li>
+                                  <li>Click <b>Generate New Key</b> and copy the string starting with <code className="bg-white/10 px-1 rounded text-purple-500">sk_</code></li>
+                                  <li>This key allows you to use your Pollen usage credits in this lab.</li>
+                                </>
+                              )}
                             </ol>
                           </div>
                         </div>
@@ -181,50 +221,6 @@ export default function SplashScreen({ onConnect, isVerifying }: SplashScreenPro
                     </motion.div>
                   )}
                 </AnimatePresence>
-              </div>
-
-              {/* Action Button */}
-              <div className="pt-6">
-                <button
-                  disabled={isVerifying}
-                  onClick={handleStart}
-                  className={cn(
-                    "w-full py-5 px-8 rounded-[1.5rem] font-black text-lg transition-all flex items-center justify-center gap-3 shadow-2xl relative overflow-hidden group/btn",
-                    "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white",
-                    "disabled:from-slate-200 disabled:to-slate-200 dark:disabled:from-slate-800 dark:disabled:to-slate-800 disabled:text-slate-400 disabled:cursor-not-allowed"
-                  )}
-                >
-                  <AnimatePresence mode="wait">
-                    {isVerifying ? (
-                      <motion.div
-                        key="verifying"
-                        initial={{ y: 20, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        exit={{ y: -20, opacity: 0 }}
-                        className="flex items-center gap-3"
-                      >
-                        <Loader2 className="w-6 h-6 animate-spin" />
-                        Validating Identity...
-                      </motion.div>
-                    ) : (
-                      <motion.div
-                        key="idle"
-                        initial={{ y: 20, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        exit={{ y: -20, opacity: 0 }}
-                        className="flex items-center justify-center gap-3 w-full"
-                      >
-                        <span>Activate Lab Access</span>
-                        <ArrowRight className="w-6 h-6 group-hover/btn:translate-x-1 transition-transform" />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                  
-                  {/* Premium Glow Effect */}
-                  {!isVerifying && (
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-1000 pointer-events-none" />
-                  )}
-                </button>
               </div>
             </div>
           </div>

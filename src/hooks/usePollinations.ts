@@ -93,6 +93,27 @@ export function usePollinations(apiKey: string | null, uid: string | null) {
         const id = Date.now().toString();
         const seed = Math.floor(Math.random() * 1000000);
         
+        // Use the secure API Route to generate the image with headers (BYOP)
+        // This prevents exposing the POLLINATIONS_APP_KEY in the frontend
+        const generationResponse = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: englishPrompt,
+            model,
+            seed,
+            width: 1024,
+            height: 1024,
+            userKey: apiKey // The sk_... key provided by user
+          })
+        });
+
+        if (!generationResponse.ok) {
+           const errorMsg = await generationResponse.text();
+           throw new Error(`Generation via proxy failed: ${errorMsg}`);
+        }
+
+        // Once generated via proxy (authorized), we can use the deterministic URL for state/history
         const url = `https://pollinations.ai/p/${encodeURIComponent(englishPrompt)}?width=1024&height=1024&seed=${seed}&model=${model}&nologo=true`;
         
         const newImage: ImageItem = {

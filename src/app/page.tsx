@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ThreeBackground from '@/components/ThreeBackground';
 import SplashScreen from '@/components/SplashScreen';
@@ -10,10 +10,91 @@ import Sidebar from '@/components/Sidebar';
 import { usePollinations } from '@/hooks/usePollinations';
 import { useAuth } from '@/components/AuthProvider';
 import { useTheme } from '@/components/ThemeProvider';
-import { LogOut, Maximize2, X, Aperture, Sun, Moon, Menu, User as UserIcon, Loader2, Globe, AlertCircle } from 'lucide-react';
+import { X, Aperture, Sun, Moon, Menu, Loader2, Globe, AlertCircle, Trash2, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { translations, Language } from '@/lib/translations';
 import { MODELS } from '@/lib/models';
+import { UserProvider, useUserDashboard } from '@/components/UserContext';
+
+// --- Lab Core: Combined Header Center Element (Ideas 1 + 2 + 4) ---
+const LabCore = ({ isGenerating }: { isGenerating: boolean }) => {
+  const pulseCount = 8;
+  return (
+    <div className="hidden lg:flex items-center gap-5 pointer-events-none select-none">
+      {/* Idea 4: Lab Identity Badge */}
+      <div className="flex flex-col items-end gap-0.5">
+        <span className="text-[8px] font-black uppercase tracking-[0.25em] text-slate-400 dark:text-white/30">AI Models</span>
+        <div className="flex items-center gap-1.5">
+          <motion.span
+            animate={{ opacity: isGenerating ? [0.4, 1, 0.4] : [0.5, 1, 0.5] }}
+            transition={{ repeat: Infinity, duration: isGenerating ? 0.6 : 2 }}
+            className={cn(
+              "w-1.5 h-1.5 rounded-full",
+              isGenerating ? "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]" : "bg-emerald-500"
+            )}
+          />
+          <span className={cn(
+            "text-[8px] font-black uppercase tracking-widest",
+            isGenerating ? "text-emerald-400" : "text-emerald-500"
+          )}>LIVE</span>
+        </div>
+      </div>
+
+      {/* Idea 1: Orbital Core + Idea 2: Pulse line */}
+      <div className="relative flex items-center justify-center w-[140px] h-10">
+        {/* Orbital rings */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ repeat: Infinity, duration: isGenerating ? 1.5 : 4, ease: 'linear' }}
+            className="absolute w-8 h-8 border border-purple-500/40 rounded-full"
+          />
+          <motion.div
+            animate={{ rotate: -360 }}
+            transition={{ repeat: Infinity, duration: isGenerating ? 2.5 : 7, ease: 'linear' }}
+            className="absolute w-5 h-5 border border-blue-400/50 rounded-full"
+          />
+          {/* Center core glow */}
+          <motion.div
+            animate={{ scale: isGenerating ? [0.8, 1.3, 0.8] : [0.9, 1.1, 0.9], opacity: isGenerating ? [0.6,1,0.6] : [0.4, 0.8, 0.4] }}
+            transition={{ repeat: Infinity, duration: isGenerating ? 0.7 : 2.5 }}
+            className="w-2.5 h-2.5 rounded-full bg-purple-400 shadow-[0_0_12px_4px_rgba(168,85,247,0.5)]"
+          />
+        </div>
+
+        {/* Idea 2: Reactive pulse waveform (right side) */}
+        <div className="absolute right-0 flex items-center gap-[2px] h-full">
+          {Array.from({ length: pulseCount }).map((_, i) => {
+            const isCenter = i === 3 || i === 4;
+            const baseDuration = isGenerating ? 0.25 + i * 0.05 : 0.6 + i * 0.1;
+            const baseHeight = isCenter ? (isGenerating ? 28 : 14) : (isGenerating ? 14 : 6);
+            return (
+              <motion.div
+                key={i}
+                animate={{ scaleY: [0.3, 1, 0.3], opacity: [0.4, 1, 0.4] }}
+                transition={{ repeat: Infinity, duration: baseDuration, delay: i * 0.07, ease: 'easeInOut' }}
+                style={{ height: baseHeight }}
+                className={cn(
+                  "w-[2px] rounded-full",
+                  isGenerating ? "bg-purple-400" : "bg-purple-500/50"
+                )}
+              />
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Right label */}
+      <div className="flex flex-col items-start gap-0.5">
+        <span className="text-[8px] font-black uppercase tracking-[0.25em] text-slate-400 dark:text-white/30">Laboratory</span>
+        <span className={cn(
+          "text-[8px] font-black uppercase tracking-[0.15em]",
+          isGenerating ? "text-purple-400" : "text-slate-300 dark:text-white/20"
+        )}>{isGenerating ? 'GENERATING...' : 'STANDBY'}</span>
+      </div>
+    </div>
+  );
+};
 
 const Hero = ({ language, selectedModelId, onSelectModel }: { language: Language, selectedModelId: string, onSelectModel: (id: string) => void }) => {
   const t = translations[language];
@@ -63,7 +144,7 @@ const Hero = ({ language, selectedModelId, onSelectModel }: { language: Language
   );
 };
 
-export default function Home() {
+function HomeContent() {
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -71,11 +152,12 @@ export default function Home() {
   const [view, setView] = useState<'generator' | 'archive'>('generator');
   const [language, setLanguage] = useState<Language>('en');
   const [showHebrewWarning, setShowHebrewWarning] = useState(false);
+  const [notification, setNotification] = useState<{message: string, type: 'success' | 'info'} | null>(null);
   
   const t = translations[language];
-  
   const { user, signIn, logout: firebaseLogout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { profile, balance, refreshUserData, clearUserData: clearDashboard } = useUserDashboard();
   
   const [recentModel, setRecentModel] = useState<string>('all');
   const [selectedModelId, setSelectedModelId] = useState(MODELS[0].id);
@@ -98,13 +180,14 @@ export default function Home() {
     generateImage(p, m);
   };
 
-  // Load API key
   useEffect(() => {
     const savedKey = localStorage.getItem('pollinations_api_key');
-    if (savedKey) setApiKey(savedKey);
-  }, []);
+    if (savedKey) {
+      setApiKey(savedKey);
+      refreshUserData(savedKey);
+    }
+  }, [refreshUserData]);
 
-  // Fetch history when user signs in
   useEffect(() => {
     if (user && apiKey) {
       fetchHistory();
@@ -118,6 +201,14 @@ export default function Home() {
     if (isValid) {
       setApiKey(key);
       localStorage.setItem('pollinations_api_key', key);
+      await refreshUserData(key);
+      setNotification({
+        message: language === 'he' 
+          ? 'שים לב: נתוני החשבון שלך מגיעים ישירות מ-Pollinations.ai בצורה מאובטחת.' 
+          : 'Note: Your account data is retrieved securely from Pollinations.ai.',
+        type: 'success'
+      });
+      setTimeout(() => setNotification(null), 8000);
     }
     
     setIsVerifying(false);
@@ -127,6 +218,7 @@ export default function Home() {
   const handleLogout = () => {
     setApiKey(null);
     localStorage.removeItem('pollinations_api_key');
+    clearDashboard();
     firebaseLogout();
   };
 
@@ -137,10 +229,15 @@ export default function Home() {
       await user.delete();
       handleLogout();
     } catch (err) {
-      console.error("Delete account error:", err);
-      // Fallback: just logout if delete fails due to re-auth requirement
       handleLogout();
     }
+  };
+
+  // Clears API key, dashboard data, localStorage → returns to splash screen
+  const handleResetKey = () => {
+    setApiKey(null);
+    localStorage.removeItem('pollinations_api_key');
+    clearDashboard();
   };
 
   const toggleLanguage = () => {
@@ -150,6 +247,13 @@ export default function Home() {
       setShowHebrewWarning(true);
       setTimeout(() => setShowHebrewWarning(false), 6000);
     }
+  };
+
+  const getTierIcon = (tier: string) => {
+    if (tier === 'Seed') return '🌱';
+    if (tier === 'Flower') return '🌸';
+    if (tier === 'Nectar') return '🍯';
+    return '💎';
   };
 
   return (
@@ -165,7 +269,11 @@ export default function Home() {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.8 }}
           >
-            <SplashScreen onConnect={handleConnect} isVerifying={isVerifying} />
+             <SplashScreen 
+               onConnect={handleConnect} 
+               isVerifying={isVerifying} 
+               language={language}
+             />
           </motion.div>
         ) : (
           <motion.div
@@ -177,7 +285,7 @@ export default function Home() {
           >
             {/* Header */}
             <div className={cn(
-               "fixed top-0 left-0 right-0 z-50 px-8 py-6 flex justify-between items-center transition-all duration-500",
+               "fixed top-0 left-0 right-0 z-50 px-8 py-6 flex justify-between items-center transition-all duration-500 relative",
                "bg-white/80 dark:bg-black/20 backdrop-blur-xl border-b border-white/5",
                language === 'he' && "flex-row-reverse"
             )} dir={language === 'he' ? 'rtl' : 'ltr'}>
@@ -207,16 +315,31 @@ export default function Home() {
                   </h1>
                 </div>
               </div>
-              
+
+              {/* ===== HEADER CENTER: Lab Core ===== */}
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                <LabCore isGenerating={isGenerating} />
+              </div>
+
               <div className="flex items-center gap-3">
-                {view === 'archive' && (
-                  <button
-                    onClick={() => setView('generator')}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-blue-500/20"
-                  >
-                    {t.backToGen}
-                  </button>
-                )}
+                 {view === 'archive' && (
+                   <button
+                     onClick={() => setView('generator')}
+                     className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-blue-500/20"
+                   >
+                     {t.backToGen}
+                   </button>
+                 )}
+
+                 {view === 'generator' && images.length > 0 && (
+                   <button
+                     onClick={() => clearHistory()}
+                     className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-white/5 hover:bg-red-500/10 hover:text-red-500 border border-slate-200 dark:border-white/10 rounded-xl font-bold text-sm transition-all text-slate-600 dark:text-gray-400"
+                   >
+                     <Trash2 className="w-4 h-4" />
+                     {language === 'he' ? 'נקה מסך' : 'Clear Screen'}
+                   </button>
+                 )}
                 
                 <button
                   onClick={toggleLanguage}
@@ -234,15 +357,46 @@ export default function Home() {
                   {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
                 </button>
 
-                {user ? (
-                   <button 
-                     onClick={() => setIsSidebarOpen(true)}
-                     className="flex items-center gap-2 p-1 pr-4 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-full hover:bg-slate-200 dark:hover:bg-white/10 transition-all font-bold text-sm"
-                   >
-                     <img src={user.photoURL || ''} className="w-8 h-8 rounded-full border border-purple-500" alt="" />
-                     <span className="hidden md:inline">{user.displayName?.split(' ')[0]}</span>
-                   </button>
-                ) : (
+                 {(user || profile) && (
+                    <button 
+                      onClick={() => setIsSidebarOpen(true)}
+                      className="flex items-center gap-3 p-1.5 pr-5 bg-white/5 backdrop-blur-3xl border border-white/10 rounded-full hover:bg-white/10 transition-all font-bold text-sm shadow-2xl relative group"
+                    >
+                      <img 
+                        src={profile?.image || user?.photoURL || ''} 
+                        className="w-9 h-9 rounded-full border border-purple-500 bg-purple-500/10" 
+                        alt="" 
+                      />
+                      <div className="flex flex-col items-start leading-tight">
+                        <span className="hidden md:inline text-white truncate max-w-[100px]">
+                          {profile?.username || user?.displayName?.split(' ')[0] || 'Anonymous'}
+                        </span>
+                        {profile?.tier && (
+                          <span className="text-[9px] uppercase tracking-widest text-purple-400 font-black">
+                            {getTierIcon(profile.tier)} {profile.tier} Tier
+                          </span>
+                        )}
+                      </div>
+                      
+                      {balance && (
+                         <div className="absolute top-full right-0 mt-4 opacity-0 group-hover:opacity-100 transition-opacity bg-[#1A1A1A] border border-white/10 p-4 rounded-3xl shadow-3xl pointer-events-none min-w-[200px]">
+                            <div className="flex justify-between items-center mb-3">
+                               <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest">Pollen Balance</span>
+                               <span className="text-sm font-black text-purple-500">{balance.totalBalance.toFixed(2)}</span>
+                            </div>
+                            <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                               <motion.div 
+                                 initial={{ width: 0 }}
+                                 animate={{ width: `${Math.min((balance.totalBalance / 100) * 100, 100)}%` }}
+                                 className="h-full bg-gradient-to-r from-purple-500 to-blue-500"
+                               />
+                            </div>
+                         </div>
+                      )}
+                    </button>
+                 )}
+
+                 {!user && !profile && (
                   <button
                     onClick={signIn}
                     className="flex items-center gap-2 px-6 py-3 google-btn-live rounded-2xl transition-all text-sm font-black text-white shadow-xl shadow-blue-500/20"
@@ -255,11 +409,31 @@ export default function Home() {
                     </svg>
                     {t.signIn}
                   </button>
-                )}
+                 )}
               </div>
             </div>
 
-            {/* Hebrew Warning Toast */}
+            {/* Notifications */}
+            <AnimatePresence>
+              {notification && (
+                <motion.div
+                  initial={{ opacity: 0, y: -20, x: '-50%' }}
+                  animate={{ opacity: 1, y: 0, x: '-50%' }}
+                  exit={{ opacity: 0, y: -20, x: '-50%' }}
+                  className="fixed top-28 left-1/2 z-[100] bg-green-500 backdrop-blur-xl border border-white/10 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 max-w-md w-[90vw]"
+                  dir={language === 'he' ? 'rtl' : 'ltr'}
+                >
+                  <CheckCircle2 className="w-6 h-6 text-white shrink-0" />
+                  <p className="text-sm font-bold text-white leading-tight">
+                    {notification.message}
+                  </p>
+                  <button onClick={() => setNotification(null)} className={cn("text-white/60 hover:text-white", language === 'he' ? "mr-auto" : "ml-auto")}>
+                    <X className="w-4 h-4" />
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <AnimatePresence>
               {showHebrewWarning && (
                 <motion.div
@@ -311,7 +485,6 @@ export default function Home() {
                isUniform={recentModel === 'all' && view === 'generator'}
              />
              
-             {/* Bottom Input Area */}
              {view === 'generator' && (
                <GenerationBar 
                  onGenerate={onGenerate} 
@@ -338,10 +511,11 @@ export default function Home() {
         onApiKeyChange={handleConnect}
         onClearHistory={clearHistory}
         onDeleteAccount={handleDeleteAccount}
+        onLogout={handleLogout}
+        onResetKey={handleResetKey}
         side={language === 'he' ? 'right' : 'left'}
       />
 
-      {/* Image Modal */}
       <AnimatePresence>
         {selectedImage && (
           <motion.div
@@ -369,5 +543,13 @@ export default function Home() {
         )}
       </AnimatePresence>
     </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <UserProvider>
+      <HomeContent />
+    </UserProvider>
   );
 }

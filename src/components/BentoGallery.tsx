@@ -2,15 +2,9 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ExternalLink, Image as ImageIcon, Search } from 'lucide-react';
+import { ExternalLink, Image as ImageIcon, Search, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface ImageItem {
-  id: string;
-  url: string;
-  prompt: string;
-  model: string;
-}
+import { ImageItem } from '@/hooks/usePollinations';
 
 interface BentoGalleryProps {
   images: ImageItem[];
@@ -19,6 +13,23 @@ interface BentoGalleryProps {
 }
 
 export default function BentoGallery({ images, onOpenImage, isUniform = false }: BentoGalleryProps) {
+  const handleDownload = async (url: string, prompt: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `${prompt.slice(0, 20).replace(/[^a-z0-9]/gi, '_')}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      window.open(url, '_blank');
+    }
+  };
+
   return (
     <div className={cn("max-w-7xl mx-auto px-6 py-12", isUniform && "max-w-full")}>
       <div className={cn(
@@ -66,9 +77,27 @@ export default function BentoGallery({ images, onOpenImage, isUniform = false }:
                 <p className="text-white font-medium text-lg line-clamp-2 leading-snug mb-4">
                   "{img.prompt}"
                 </p>
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/10 flex items-center justify-center hover:bg-white/20 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.open(img.url, '_blank');
+                    }}
+                    className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/10 flex items-center justify-center hover:bg-white/20 transition-colors cursor-pointer"
+                    title="Open in new tab"
+                  >
                     <ExternalLink className="w-5 h-5 text-white" />
+                  </div>
+                  
+                  <div 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDownload(img.url, img.prompt);
+                    }}
+                    className="w-12 h-12 rounded-2xl bg-purple-600 backdrop-blur-xl border border-white/10 flex items-center justify-center hover:bg-purple-500 transition-all cursor-pointer shadow-lg shadow-purple-600/40"
+                    title="Download image"
+                  >
+                    <Download className="w-5 h-5 text-white" />
                   </div>
                 </div>
               </div>
@@ -84,9 +113,7 @@ export default function BentoGallery({ images, onOpenImage, isUniform = false }:
         </AnimatePresence>
 
         {images.length === 0 && (
-          <div className="col-span-full h-96 flex flex-col items-center justify-center text-slate-400 dark:text-gray-400 border-2 border-dashed border-slate-200 dark:border-white/10 rounded-[3rem] opacity-20">
-            <Search className="w-12 h-12" />
-          </div>
+          <div className="col-span-full h-24 invisible" />
         )}
       </div>
     </div>
