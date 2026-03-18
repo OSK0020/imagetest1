@@ -39,6 +39,7 @@ export default function GenerationBar({ onGenerate, onStop, isGenerating, langua
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
         className="relative flex items-center gap-3 p-3 bg-white/90 dark:bg-[#1A1A1A]/80 backdrop-blur-3xl border border-slate-200 dark:border-white/10 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
+        dir={language === 'he' ? 'rtl' : 'ltr'}
       >
         {/* Model Selector */}
         <div className="relative">
@@ -49,7 +50,7 @@ export default function GenerationBar({ onGenerate, onStop, isGenerating, langua
             {selectedModel.icon}
             <span className="hidden md:inline">{selectedModel.id === 'all' ? (language === 'he' ? 'כל המודלים' : 'All Models') : selectedModel.name}</span>
             <span className="md:hidden">Model</span>
-            <SlidersHorizontal className="w-4 h-4 opacity-50 ml-1" />
+            <SlidersHorizontal className={cn("w-4 h-4 opacity-50", language === 'he' ? "mr-1" : "ml-1")} />
           </button>
 
           <AnimatePresence>
@@ -123,7 +124,10 @@ export default function GenerationBar({ onGenerate, onStop, isGenerating, langua
                  <span className="text-xs font-bold text-white hidden md:inline">{t.generating}</span>
               </div>
             ) : (
-              <Send className={cn("w-6 h-6 transition-transform duration-500", prompt.trim() && "group-hover:translate-x-1 group-hover:-translate-y-1")} />
+                            <Send className={cn(
+                "w-6 h-6 transition-transform duration-500", 
+                prompt.trim() && !isGenerating && (language === 'he' ? "group-hover:-translate-x-1 group-hover:-translate-y-1" : "group-hover:translate-x-1 group-hover:-translate-y-1")
+              )} />
             )}
           </button>
         </div>

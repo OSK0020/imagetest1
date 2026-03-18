@@ -17,7 +17,8 @@ import {
   EyeOff,
   Edit3,
   Check,
-  Lock
+  Lock,
+  Loader2
 } from 'lucide-react';
 import { useAuth } from './AuthProvider';
 import { KeyAnalysis, ImageItem } from '@/hooks/usePollinations';
@@ -55,15 +56,20 @@ export default function Sidebar({
   
   const [isEditingKey, setIsEditingKey] = React.useState(false);
   const [newKey, setNewKey] = React.useState('');
-  const [showKey, setShowKey] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
+  const [showConfirm, setShowConfirm] = React.useState(false);
 
   const handleSaveKey = async () => {
+    if (!showConfirm && apiKey) {
+      setShowConfirm(true);
+      return;
+    }
     setIsSaving(true);
     const success = await onApiKeyChange(newKey);
     if (success) {
       setIsEditingKey(false);
       setNewKey('');
+      setShowConfirm(false);
     }
     setIsSaving(false);
   };
@@ -100,7 +106,7 @@ export default function Sidebar({
               </div>
 
               {/* Profile */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-8">
+              <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
                 <div className="bg-gradient-to-br from-purple-600/10 to-blue-600/10 dark:from-purple-600/10 dark:to-blue-600/10 border border-slate-200 dark:border-white/5 rounded-3xl p-6 relative overflow-hidden">
                   <div className="relative z-10 flex items-center gap-4 mb-4">
                     {user ? (
@@ -139,16 +145,10 @@ export default function Sidebar({
                       <div className="flex flex-col">
                         <span className="text-[10px] text-slate-500 font-bold uppercase">{language === 'he' ? 'מפתח API' : 'API Key'}</span>
                         <span className="text-xs font-mono text-slate-300">
-                          {showKey ? apiKey : '••••••••••••••••'}
+                          ••••••••••••••••
                         </span>
                       </div>
                       <div className="flex gap-1">
-                        <button 
-                          onClick={() => setShowKey(!showKey)}
-                          className="p-2 hover:bg-white/5 rounded-lg transition-colors text-slate-400"
-                        >
-                          {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
                         <button 
                           onClick={() => setIsEditingKey(!isEditingKey)}
                           className="p-2 hover:bg-white/5 rounded-lg transition-colors text-slate-400"
@@ -160,39 +160,65 @@ export default function Sidebar({
 
                     <AnimatePresence>
                       {isEditingKey && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          className="overflow-hidden"
-                        >
-                          <div className="pt-2 space-y-2">
-                            <input 
-                              type="password"
-                              value={newKey}
-                              onChange={(e) => setNewKey(e.target.value)}
-                              placeholder={language === 'he' ? 'הכנס מפתח חדש...' : 'Enter new key...'}
-                              className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-purple-500/50"
-                            />
-                            <div className="flex gap-2">
-                              <button 
-                                onClick={handleSaveKey}
-                                disabled={!newKey || isSaving}
-                                className="flex-1 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white rounded-xl text-[10px] font-bold transition-all flex items-center justify-center gap-2"
-                              >
-                                {isSaving ? <Globe className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
-                                {t.saveKey}
-                              </button>
-                              <button 
-                                onClick={() => setIsEditingKey(false)}
-                                className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl text-[10px] font-bold transition-all"
-                              >
-                                {t.cancel}
-                              </button>
-                            </div>
-                          </div>
-                        </motion.div>
-                      )}
+                         <motion.div
+                           initial={{ height: 0, opacity: 0 }}
+                           animate={{ height: 'auto', opacity: 1 }}
+                           exit={{ height: 0, opacity: 0 }}
+                           className="overflow-hidden"
+                         >
+                           <div className="pt-2 space-y-4">
+                             {showConfirm ? (
+                               <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 space-y-3">
+                                 <p className="text-[10px] text-red-500 font-bold leading-tight">
+                                   {language === 'he' 
+                                     ? 'אזהרה: שינוי מפתח ה-API עלול להוביל לניתוק מהחשבון ואובדן גישה ליכולות פרימיום. האם ברצונך לשנות?' 
+                                     : 'Warning: Changing the API key may lead to logout and loss of premium features. Do you want to change it?'}
+                                 </p>
+                                 <div className="flex gap-2">
+                                   <button 
+                                     onClick={handleSaveKey}
+                                     className="flex-1 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-[10px] font-bold transition-all"
+                                   >
+                                     {language === 'he' ? 'כן, שנה מפתח' : 'Yes, change key'}
+                                   </button>
+                                   <button 
+                                     onClick={() => setShowConfirm(false)}
+                                     className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg text-[10px] font-bold transition-all"
+                                   >
+                                     {t.cancel}
+                                   </button>
+                                 </div>
+                               </div>
+                             ) : (
+                               <>
+                                 <input 
+                                   type="password"
+                                   value={newKey}
+                                   onChange={(e) => setNewKey(e.target.value)}
+                                   placeholder={language === 'he' ? 'הכנס מפתח חדש...' : 'Enter new key...'}
+                                   className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-purple-500/50"
+                                 />
+                                 <div className="flex gap-2">
+                                   <button 
+                                     onClick={handleSaveKey}
+                                     disabled={!newKey || isSaving}
+                                     className="flex-1 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white rounded-xl text-[10px] font-bold transition-all flex items-center justify-center gap-2"
+                                   >
+                                     {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                                     {t.saveKey}
+                                   </button>
+                                   <button 
+                                     onClick={() => setIsEditingKey(false)}
+                                     className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl text-[10px] font-bold transition-all"
+                                   >
+                                     {t.cancel}
+                                   </button>
+                                 </div>
+                               </>
+                             )}
+                           </div>
+                         </motion.div>
+                       )}
                     </AnimatePresence>
                   </div>
                 </div>

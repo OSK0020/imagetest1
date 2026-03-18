@@ -107,8 +107,9 @@ export default function Home() {
             {/* Header */}
             <div className={cn(
                "fixed top-0 left-0 right-0 z-50 px-8 py-6 flex justify-between items-center transition-all duration-500",
-               "bg-white/80 dark:bg-black/20 backdrop-blur-xl border-b border-white/5"
-            )}>
+               "bg-white/80 dark:bg-black/20 backdrop-blur-xl border-b border-white/5",
+               language === 'he' && "flex-row-reverse"
+            )} dir={language === 'he' ? 'rtl' : 'ltr'}>
               <div className="flex items-center gap-4">
                 <button 
                   onClick={() => setIsSidebarOpen(true)}
@@ -123,8 +124,11 @@ export default function Home() {
                     </div>
                   </div>
                   <h1 className="text-xl font-black tracking-tighter uppercase hidden sm:block">
-                    {t.title.split(' ')[0]} <span className="text-purple-500">{t.title.split(' ').slice(1).join(' ')}</span>
-                    {view === 'archive' && <span className="ml-3 text-xs opacity-50 font-medium bg-white/10 px-2 py-1 rounded-lg">{t.archive.toUpperCase()}</span>}
+                    {t.title}
+                    {view === 'archive' && <span className={cn(
+                      "text-xs opacity-50 font-medium bg-white/10 px-2 py-1 rounded-lg",
+                      language === 'he' ? "mr-3" : "ml-3"
+                    )}>{t.archive.toUpperCase()}</span>}
                   </h1>
                 </div>
               </div>
@@ -183,12 +187,13 @@ export default function Home() {
                   animate={{ opacity: 1, y: 0, x: '-50%' }}
                   exit={{ opacity: 0, y: -20, x: '-50%' }}
                   className="fixed top-28 left-1/2 z-[100] bg-orange-500/90 backdrop-blur-xl border border-white/10 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 max-w-md w-[90vw]"
+                  dir={language === 'he' ? 'rtl' : 'ltr'}
                 >
                   <AlertCircle className="w-6 h-6 text-white shrink-0" />
-                  <p className="text-sm font-bold text-white leading-tight rtl:text-right">
+                  <p className="text-sm font-bold text-white leading-tight">
                     {t.hebrewWarning}
                   </p>
-                  <button onClick={() => setShowHebrewWarning(false)} className="ml-auto text-white/60 hover:text-white">
+                  <button onClick={() => setShowHebrewWarning(false)} className={cn("text-white/60 hover:text-white", language === 'he' ? "mr-auto" : "ml-auto")}>
                     <X className="w-4 h-4" />
                   </button>
                 </motion.div>
@@ -203,6 +208,7 @@ export default function Home() {
                   animate={{ opacity: 1, y: 0, x: '-50%' }}
                   exit={{ opacity: 0, y: -20, x: '-50%' }}
                   className="fixed top-28 left-1/2 z-[100] bg-blue-600/90 backdrop-blur-xl border border-white/10 px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3"
+                  dir={language === 'he' ? 'rtl' : 'ltr'}
                 >
                   <Loader2 className="w-4 h-4 animate-spin text-white" />
                   <span className="text-sm font-bold text-white tracking-wide">{t.translateToast}</span>
@@ -236,7 +242,7 @@ export default function Home() {
         onViewArchive={() => setView('archive')}
         language={language}
         onApiKeyChange={handleConnect}
-        side="left"
+        side={language === 'he' ? 'right' : 'left'}
       />
 
       {/* Image Modal */}
