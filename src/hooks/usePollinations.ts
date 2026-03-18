@@ -31,10 +31,13 @@ export function usePollinations(apiKey: string | null, uid: string | null) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
   const [keyAnalysis, setKeyAnalysis] = useState<KeyAnalysis | null>(null);
+  const [isStopping, setIsStopping] = useState(false);
   
   // Sequential queue management
   const queueRef = useRef<{prompt: string, model: string}[]>([]);
   const isProcessingQueue = useRef(false);
+  const stopRef = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const translatePrompt = async (prompt: string): Promise<string> => {
     const hasHebrew = /[\u0590-\u05FF]/.test(prompt);
@@ -78,8 +81,11 @@ export function usePollinations(apiKey: string | null, uid: string | null) {
     
     isProcessingQueue.current = true;
     setIsGenerating(true);
+    stopRef.current = false;
+    setIsStopping(false);
+    abortControllerRef.current = new AbortController();
 
-    while (queueRef.current.length > 0) {
+    while (queueRef.current.length > 0 && !stopRef.current) {
       const { prompt, model } = queueRef.current.shift()!;
       
       try {
@@ -102,6 +108,8 @@ export function usePollinations(apiKey: string | null, uid: string | null) {
         saveToFirestore(newImage);
         
         // Wait for image to load or at least give a gap for rate limiting (cooldown)
+        // If stopping, break the loop
+        if (stopRef.current) break;
         await new Promise(r => setTimeout(r, 4000));
       } catch (err) {
         console.error("Queue item failed:", err);
@@ -110,17 +118,64 @@ export function usePollinations(apiKey: string | null, uid: string | null) {
 
     setIsGenerating(false);
     isProcessingQueue.current = false;
+    setIsStopping(false);
+    abortControllerRef.current = null;
+  };
+
+  const stopGeneration = () => {
+    stopRef.current = true;
+    queueRef.current = [];
+    setIsStopping(true);
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
   };
 
   const addToQueue = async (prompt: string, model: string) => {
     if (model === 'all') {
-      ORIGINAL_MODELS.forEach(m => {
-        queueRef.current.push({ prompt, model: m });
+      // For "All Models", we'll run them concurrently as requested
+      // but we still want to save to history.
+      setIsGenerating(true);
+      stopRef.current = false;
+      abortControllerRef.current = new AbortController();
+      
+      const englishPrompt = await translatePrompt(prompt);
+      
+      const promises = ORIGINAL_MODELS.map(async (m) => {
+        if (stopRef.current) return;
+        
+        try {
+          // Note: Browser images don't easily support AbortController for <img> src,
+          // but if we were fetching them we could cancel. 
+          // For now, this mostly stops the translation and queue.
+          
+          const id = Date.now().toString() + m;
+          const seed = Math.floor(Math.random() * 1000000);
+          const url = `https://pollinations.ai/p/${encodeURIComponent(englishPrompt)}?width=1024&height=1024&seed=${seed}&model=${m}&nologo=true`;
+          
+          const newImage: ImageItem = {
+            id,
+            url,
+            prompt: englishPrompt,
+            model: m,
+            timestamp: Date.now()
+          };
+
+          setImages(prev => [newImage, ...prev]);
+          setHistory(prev => [newImage, ...prev].slice(0, 50));
+          saveToFirestore(newImage);
+        } catch (err) {
+            console.error(`Concurrent generation failed for ${m}:`, err);
+        }
       });
+
+      await Promise.all(promises);
+      setIsGenerating(false);
+      abortControllerRef.current = null;
     } else {
       queueRef.current.push({ prompt, model });
+      processQueue();
     }
-    processQueue();
   };
 
   const fetchHistory = useCallback(async () => {
@@ -197,6 +252,7 @@ export function usePollinations(apiKey: string | null, uid: string | null) {
     keyAnalysis,
     generateImage: addToQueue,
     verifyKey: verifyAndAnalyzeKey,
-    fetchHistory
+    fetchHistory,
+    stopGeneration
   };
 }

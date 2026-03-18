@@ -10,8 +10,9 @@ import Sidebar from '@/components/Sidebar';
 import { usePollinations } from '@/hooks/usePollinations';
 import { useAuth } from '@/components/AuthProvider';
 import { useTheme } from '@/components/ThemeProvider';
-import { LogOut, Maximize2, X, Aperture, Sun, Moon, Menu, User as UserIcon, Loader2 } from 'lucide-react';
+import { LogOut, Maximize2, X, Aperture, Sun, Moon, Menu, User as UserIcon, Loader2, Globe, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { translations, Language } from '@/lib/translations';
 
 export default function Home() {
   const [apiKey, setApiKey] = useState<string | null>(null);
@@ -19,6 +20,10 @@ export default function Home() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [view, setView] = useState<'generator' | 'archive'>('generator');
+  const [language, setLanguage] = useState<Language>('en');
+  const [showHebrewWarning, setShowHebrewWarning] = useState(false);
+  
+  const t = translations[language];
   
   const { user, signIn, logout: firebaseLogout } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -31,7 +36,8 @@ export default function Home() {
     keyAnalysis, 
     generateImage, 
     verifyKey, 
-    fetchHistory 
+    fetchHistory,
+    stopGeneration
   } = usePollinations(apiKey, user?.uid || null);
 
   // Load API key
@@ -64,6 +70,15 @@ export default function Home() {
     setApiKey(null);
     localStorage.removeItem('pollinations_api_key');
     firebaseLogout();
+  };
+
+  const toggleLanguage = () => {
+    const newLang = language === 'en' ? 'he' : 'en';
+    setLanguage(newLang);
+    if (newLang === 'he') {
+      setShowHebrewWarning(true);
+      setTimeout(() => setShowHebrewWarning(false), 6000);
+    }
   };
 
   return (
@@ -108,8 +123,8 @@ export default function Home() {
                     </div>
                   </div>
                   <h1 className="text-xl font-black tracking-tighter uppercase hidden sm:block">
-                    AI Lab <span className="text-purple-500">Modern</span>
-                    {view === 'archive' && <span className="ml-3 text-xs opacity-50 font-medium bg-white/10 px-2 py-1 rounded-lg">ARCHIVE</span>}
+                    {t.title.split(' ')[0]} <span className="text-purple-500">{t.title.split(' ').slice(1).join(' ')}</span>
+                    {view === 'archive' && <span className="ml-3 text-xs opacity-50 font-medium bg-white/10 px-2 py-1 rounded-lg">{t.archive.toUpperCase()}</span>}
                   </h1>
                 </div>
               </div>
@@ -120,9 +135,19 @@ export default function Home() {
                     onClick={() => setView('generator')}
                     className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-blue-500/20"
                   >
-                    Back to Gen
+                    {t.backToGen}
                   </button>
                 )}
+                
+                <button
+                  onClick={toggleLanguage}
+                  className="flex items-center gap-2 p-3 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 rounded-2xl transition-all"
+                  title={t.language}
+                >
+                  <Globe className="w-5 h-5" />
+                  <span className="text-xs font-bold hidden md:inline">{language.toUpperCase()}</span>
+                </button>
+
                 <button
                   onClick={toggleTheme}
                   className="p-3 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 rounded-2xl transition-all"
@@ -144,11 +169,31 @@ export default function Home() {
                     className="flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-500 rounded-2xl transition-all text-sm font-bold text-white shadow-xl shadow-purple-500/20"
                   >
                     <UserIcon className="w-4 h-4" />
-                    Sign In
+                    {t.signIn}
                   </button>
                 )}
               </div>
             </div>
+
+            {/* Hebrew Warning Toast */}
+            <AnimatePresence>
+              {showHebrewWarning && (
+                <motion.div
+                  initial={{ opacity: 0, y: -20, x: '-50%' }}
+                  animate={{ opacity: 1, y: 0, x: '-50%' }}
+                  exit={{ opacity: 0, y: -20, x: '-50%' }}
+                  className="fixed top-28 left-1/2 z-[100] bg-orange-500/90 backdrop-blur-xl border border-white/10 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 max-w-md w-[90vw]"
+                >
+                  <AlertCircle className="w-6 h-6 text-white shrink-0" />
+                  <p className="text-sm font-bold text-white leading-tight rtl:text-right">
+                    {t.hebrewWarning}
+                  </p>
+                  <button onClick={() => setShowHebrewWarning(false)} className="ml-auto text-white/60 hover:text-white">
+                    <X className="w-4 h-4" />
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Translation Progress Toast */}
             <AnimatePresence>
@@ -160,7 +205,7 @@ export default function Home() {
                   className="fixed top-28 left-1/2 z-[100] bg-blue-600/90 backdrop-blur-xl border border-white/10 px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3"
                 >
                   <Loader2 className="w-4 h-4 animate-spin text-white" />
-                  <span className="text-sm font-bold text-white tracking-wide">Gemini Translating Prompt...</span>
+                  <span className="text-sm font-bold text-white tracking-wide">{t.translateToast}</span>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -170,7 +215,12 @@ export default function Home() {
             
             {/* Bottom Input Area */}
             {view === 'generator' && (
-              <GenerationBar onGenerate={generateImage} isGenerating={isGenerating} />
+              <GenerationBar 
+                onGenerate={generateImage} 
+                onStop={stopGeneration}
+                isGenerating={isGenerating} 
+                language={language} 
+              />
             )}
           </motion.div>
         )}
@@ -184,6 +234,9 @@ export default function Home() {
         usageCount={images.length}
         history={history}
         onViewArchive={() => setView('archive')}
+        language={language}
+        onApiKeyChange={handleConnect}
+        side="left"
       />
 
       {/* Image Modal */}
