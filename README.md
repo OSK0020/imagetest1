@@ -1,6 +1,6 @@
 # 🌌 AI Models Laboratory
 ### *The Ultimate Visionary Playground for AI Image Generation*
-🚀 >>> **[CLICK HERE TO ACCESS LIVE WAR ROOM](https://osk0020.github.io/imagetest1-poll/)** <<<
+🚀 >>> **[CLICK HERE TO ACCESS THE LAB](https://osk0020.github.io/imagetest1-poll/)** <<<
 ![AI Lab Banner](./banner.png)
 
 ## ✨ Overview
