@@ -1,12 +1,14 @@
-# 🌌 AI Models Laboratory (Protected Build)
+# 🌌 AI Models Laboratory (Public Preview)
 
-> [!IMPORTANT]
-> **This project is PROTECTED by OSK0020.**
-> The source code is provided for portfolio demonstration purposes only. Running this project on unauthorized domains or environments without the original author's permission is strictly prohibited.
+> [!CAUTION]
+> **PROTECTED REPOSITORY - PARTIAL BUILD**
+> This repository contains only public assets, styles, and documentation for demonstration purposes.
+> The core logic, including components, API routes, and specialized hooks, is kept private to protect intellectual property.
+> **Cloning or zipping this repository will NOT result in a functional application locally.**
 > 
 
 ### *The Ultimate Visionary Playground for AI Image Generation*
-🚀 >>> **[CLICK HERE TO ACCESS THE OFFICIAL LAB](https://iamge-lab-website.vercel.app/)** <<<
+🚀 >>> **[CLICK HERE TO ACCESS THE FULL LIVE LAB](https://iamge-lab-website.vercel.app/)** <<<
 ![AI Lab Banner](./banner.png)
 
 ## ✨ Overview
